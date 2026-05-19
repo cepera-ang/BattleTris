@@ -1,10 +1,11 @@
 #ifndef BTDIRS_H
 #define BTDIRS_H
 
-#define BT_SOUND_DIR	"/home/mws/share/BattleTris/sounds/" // Get rid of this!
-#define BT_ART_DIR	"/home/mws/share/BattleTris/art/"   // Get rid of this!
-#define BTDB_WEAPONS	"/home/mws/share/BattleTris/btweapons.db" // Get rid of this!
-#define BTDB_WEAPONSP	"/home/mws/share/BattleTris/btweaponsp.db"// Get rid of this!
+#define BT_SRC_DIR	"/Users/ahl/src/BattleTris/usr/src"
+#define BT_SOUND_DIR	BT_SRC_DIR "/share/sounds/"
+#define BT_ART_DIR	BT_SRC_DIR "/art/"
+#define BTDB_WEAPONS	BT_SRC_DIR "/share/btweapons.db"
+#define BTDB_WEAPONSP	BT_SRC_DIR "/share/btweaponsp.db"
 
 #define BTDB_PLANFILE	"/.btplan"
 #define BTDB_NETWORK	"btnetwork"
