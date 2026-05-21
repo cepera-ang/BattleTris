@@ -1,0 +1,10 @@
+# BattleTris Server Configuration File
+#
+# Generated from btserver.cf.in by configure.
+
+DATADIR  "@BT_SRC_DIR@/daemons"			# Server database directory
+LOGSDIR  "@BT_SRC_DIR@/daemons"			# Server logs directory
+PIPEDIR  "/tmp"					# Named pipe location
+SLVPATH  "@BT_SRC_DIR@/daemons/btslaved"	# Pathname of btslaved daemon
+AUDIODIR "@BT_SRC_DIR@/share/sounds"		# Application sounds directory
+ARTDIR   "@BT_SRC_DIR@/art"			# Application images directory

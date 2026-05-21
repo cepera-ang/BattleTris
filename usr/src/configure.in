@@ -435,4 +435,4 @@ dnl and the weapons databases when running uninstalled from the build tree.
 BT_SRC_DIR=`cd "$srcdir" && pwd`
 AC_SUBST(BT_SRC_DIR)
 
-AC_OUTPUT(Makeinclude game/BTDirs.H)
+AC_OUTPUT(Makeinclude game/BTDirs.H daemons/btserver.cf)

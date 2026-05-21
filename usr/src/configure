@@ -6847,7 +6847,7 @@ fi
 BT_SRC_DIR=`cd "$srcdir" && pwd`
 
 
-ac_config_files="$ac_config_files Makeinclude game/BTDirs.H"
+ac_config_files="$ac_config_files Makeinclude game/BTDirs.H daemons/btserver.cf"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7537,6 +7537,7 @@ do
     "BTConfig.H") CONFIG_HEADERS="$CONFIG_HEADERS BTConfig.H" ;;
     "Makeinclude") CONFIG_FILES="$CONFIG_FILES Makeinclude" ;;
     "game/BTDirs.H") CONFIG_FILES="$CONFIG_FILES game/BTDirs.H" ;;
+    "daemons/btserver.cf") CONFIG_FILES="$CONFIG_FILES daemons/btserver.cf" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
