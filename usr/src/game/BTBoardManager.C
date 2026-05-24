@@ -450,6 +450,8 @@ void BTBoardManager::receive (BTRingPacket *packet) {
       redraw();
       break;
     }
+    default:
+      break;
     }
     break;
   } // case BT_WPN_ON
@@ -491,6 +493,8 @@ void BTBoardManager::receive (BTRingPacket *packet) {
       break;
     }
   }
+  default:
+    break;
   }
   pass (packet);
 }

@@ -20,6 +20,8 @@ public:
   virtual int allocPieceColors() = 0;
 //  virtual BTColor *getColor( int num) { return color_[num]; }
 
+  virtual ~BTPalette() {}
+
 protected:
   BTPalette() {};
 //  Block<BTColor *> color_;

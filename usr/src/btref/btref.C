@@ -45,7 +45,7 @@ BTDB *plydb = 0;
 static void parse_args(int argc, char **argv);
 static void usage(char *pname);
 
-static Command *findcommand(register char *name);
+static Command *findcommand(char *name);
 static void tokenize(char *buf, int& argc, char **argv);
 
 void cleanup();
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   if(prompt)
     cout << "BattleTris Referee Software v" << BTREF_VERSION << endl;
 
-  register Command *c;
+  Command *c;
   char cmdbuf[BTREF_CMDBUFLEN + 1];
   char *cmdargv[BTREF_CMDBUFLEN / 2];
   int cmdargc;
@@ -196,14 +196,15 @@ static void usage(char *pname)
   cout << flush;
 }
 
-static Command *findcommand(register char *name)
+static Command *findcommand(char *name)
 {
-  register Command *c, *found = 0;
-  register int nmatches = 0;
-  register int longest = 0;
-  register char *p, *q;
+  Command *c, *found = 0;
+  int nmatches = 0;
+  int longest = 0;
+  const char *p;
+  char *q;
 
-  for(c = cmdtab; p = c->name_; c++) {
+  for(c = cmdtab; (p = c->name_); c++) {
     for(q = name; *q == *p++; q++) {
       if(*q == 0)
 	return(c);
@@ -227,7 +228,7 @@ static Command *findcommand(register char *name)
 
 static void tokenize(char *buf, int& argc, char **argv)
 {
-  register char *tok;
+  char *tok;
   argc = 0;
 
   for(tok = strtok(buf, BTREF_CMDDELIMS); tok != NULL;
@@ -239,8 +240,8 @@ static void tokenize(char *buf, int& argc, char **argv)
 
 void cmd_help(int argc, char **argv)
 {
-  register Command *c;
-  register char *arg;
+  Command *c;
+  char *arg;
 
   if(argc == 1) {
     cout << "== BattleTris Referee Help ================================\n";

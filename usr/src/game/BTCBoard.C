@@ -301,7 +301,7 @@ float BTCBoard::eval( int i, int j, BTPiece *piece,
 	  // active.
 	  for ( k = 0 ; k < BT_BOARD_WTH ; k++ ) {
 	    box_[k][y].reset();
-	    blocks[k][y] == blocks[k][y-1];
+	    blocks[k][y] = 0;
 	  }
       y--;
       }

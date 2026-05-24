@@ -246,10 +246,11 @@ void BTSoundManager::receive (BTRingPacket *packet) {
 			case BT_TWILIGHT:
 				*dev_ << "weapons/TwilightZone.au";
 				break;
+			default: break;
 			}
 			break;
 		}
-		case BT_START: 
+		case BT_START:
 			break;
 
 		case BT_WPN_OFF: {
@@ -261,6 +262,7 @@ void BTSoundManager::receive (BTRingPacket *packet) {
 			case BT_HATTER:
 				play_random (&survived_);
 				break;
+			default: break;
 			}
 			break;
 		}
@@ -286,12 +288,13 @@ void BTSoundManager::receive (BTRingPacket *packet) {
 				break;
 			}
 		}
+		default: break;
 		}
 	pass (packet);
 }
 
 void BTSoundManager::welcome() {
-	register int i;
+	int i;
 	time_t curtime;
 
 	time(&curtime);

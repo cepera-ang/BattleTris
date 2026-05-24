@@ -33,7 +33,7 @@ protected:
 
 public:
   BTDBLock(int filedes, off_t offset = 0, off_t length = 0);
-  ~BTDBLock();
+  virtual ~BTDBLock();
 
   virtual short lock() = 0;
   virtual short lockw() = 0;

@@ -42,7 +42,7 @@ BTMDSlave::BTMDSlave(StreamSocket *sock, int prindex)
     return;
 
   case 0:
-    sprintf(buf, "%d", prindex);
+    snprintf(buf, sizeof(buf), "%d", prindex);
     if(execl(g_conf->slvpath(), BTMD_SLAVE_ARGV0, BTMD_SLAVE_ARGV1,
 	     buf, BTMD_SLAVE_ARGV3, configfile, (char *) 0) < 0)
       exit(1);

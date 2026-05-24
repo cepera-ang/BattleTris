@@ -204,7 +204,7 @@ BTChallenge::handleLevel()
 
 	level_ = ernie_slider_.value_;
 
- 	sprintf(label, "Play %s Ernie", BTComputer::levelName(level_));
+ 	snprintf(label, sizeof(label), "Play %s Ernie", BTComputer::levelName(level_));
 
 	computer_button_.setLabel(label);
 	computer_button_.alignCenter();

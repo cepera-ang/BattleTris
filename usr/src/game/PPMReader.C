@@ -29,10 +29,10 @@ PPMReader::PPMReader(Widget widget, const char *root)
   else
     root_[0] = 0;
 
-  XtVaGetValues(widget, XtNcolormap, &cmap_, 
-    XtNvisual, &visual_, 
+  XtVaGetValues(widget, XtNcolormap, &cmap_,
+    XtNvisual, &visual_,
     XtNdepth, &depth_,
-    0);
+    NULL);
 
   Display *display = XtDisplay(widget_);
 

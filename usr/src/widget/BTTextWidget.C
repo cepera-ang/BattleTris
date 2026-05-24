@@ -14,7 +14,7 @@ BTTextWidget::BTTextWidget(BTWidget *parent, const char *name,
 : BTWidget(parent), rows_(rows), cols_(cols), tab_(2)
 {
 	char *buf = new char [rows * cols];
-	register short r, i;
+	short r, i;
 
 	for (r = 0; r < rows; r++) {
  		for (i = 0; i < cols - 1; i++) 

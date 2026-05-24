@@ -258,9 +258,9 @@ void BTRoster::handleUserSelection()
     if((player_1_ != player_2_) &&
        ((record = player_1_->recordAgainst(player_2_)) != 0)) {
 
-      sprintf(labelbuf_, "%lu", record->wins_);
+      snprintf(labelbuf_, sizeof(labelbuf_), "%lu", record->wins_);
       player1_score_.setLabel(labelbuf_);
-      sprintf(labelbuf_, "%lu", record->losses_);
+      snprintf(labelbuf_, sizeof(labelbuf_), "%lu", record->losses_);
       player2_score_.setLabel(labelbuf_);
 
     } else {

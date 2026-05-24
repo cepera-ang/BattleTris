@@ -720,10 +720,10 @@ void BTNetManager::formatNetworkEntry(int index)
     status = BTNETMGR_STATUS_UNKNOWN;
   }
 
-  sprintf(netbuf_[index], "%-*.*s %-*s %-*s", BTNETMGR_USER_WIDTH,
-	  BTNETMGR_USER_WIDTH, netdata_[index]->userName_,
-	  BTNETMGR_HOST_WIDTH, abbr,
-	  BTNETMGR_STATUS_WIDTH, status);
+  snprintf(netbuf_[index], BTNETMGR_NETENTRYLEN, "%-*.*s %-*s %-*s", BTNETMGR_USER_WIDTH,
+	   BTNETMGR_USER_WIDTH, netdata_[index]->userName_,
+	   BTNETMGR_HOST_WIDTH, abbr,
+	   BTNETMGR_STATUS_WIDTH, status);
 }
 
 BTPlayer *BTNetManager::plyentry(char *name)

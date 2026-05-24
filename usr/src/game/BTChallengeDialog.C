@@ -38,13 +38,13 @@ BTChallengeDialog::BTChallengeDialog (BTWidget *parent,
 
   me_ = 0;
 
-  XtVaGetValues (*parent_, 
+  XtVaGetValues (*parent_,
     XmNvisual, &visual,
     XmNbackgroundPixmap, &bg_pixmap,
     XmNborderPixmap, &brdr_pixmap,
     XmNcolormap, &colormap,
     XmNdepth, &depth,
-    0);
+    NULL);
 
   me_ = XmCreateDialogShell (*parent_, (char *)"challenge_popup", 0, 0);
   size( BT_CHAL_D_W, BT_CHAL_D_H );
@@ -58,7 +58,7 @@ BTChallengeDialog::BTChallengeDialog (BTWidget *parent,
 		XmNborderPixmap, brdr_pixmap,
 		XmNcolormap, colormap,
 		XmNdepth, depth,
-		0);
+		NULL);
 
   form_  = new BTFormWidget(this, "form",
 			    BT_CHAL_D_W, BT_CHAL_D_H, 100 );

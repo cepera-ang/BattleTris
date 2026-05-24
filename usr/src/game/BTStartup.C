@@ -407,6 +407,7 @@ void BTStartup::handleYes() {
 
     // And set the values correctly...
     parent_->size(-1, -1, BT_GAME_WIDTH, BT_GAME_HEIGHT);
+  default: break;
   }
 
   challengee_ = 1;

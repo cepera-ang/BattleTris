@@ -233,7 +233,7 @@ void BTBazaar::dim( int num )
 		 XmNfillOnArm, False,
 		 NULL );
   XtVaSetValues (label_[num]->getWidget(), XtVaTypedArg, XmNforeground,
-		 XmRString, "gray75", 7, 0);
+		 XmRString, "gray75", 7, NULL);
 }
 
 void BTBazaar::unDim( int num )
@@ -242,16 +242,16 @@ void BTBazaar::unDim( int num )
 		 XmNfillOnArm, True,
 		 NULL );
   XtVaSetValues (label_[num]->getWidget(), XtVaTypedArg, XmNforeground,
-		 XmRString, "blue", 7, 0);
+		 XmRString, "blue", 7, NULL);
 }
 
 void BTBazaar::dimButtons() {
   XtVaSetValues (add_button_->getWidget(), XmNfillOnArm, False,
-		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, NULL);
   XtVaSetValues (remove_button_->getWidget(), XmNfillOnArm, False,
-		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, NULL);
   XtVaSetValues (done_button_->getWidget(), XmNfillOnArm, False,
-		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "gray75", 7, NULL);
   dimmed_ = 1;
 }
 
@@ -265,7 +265,7 @@ void BTBazaar::updateFunds()
 {
   char buf[32]; // More than big enough for max/min long integer
 
-  sprintf(buf, "%ld", funds_);
+  snprintf(buf, sizeof(buf), "%ld", funds_);
   funds_w_->setLabel(buf);
 }
 
@@ -334,8 +334,8 @@ void BTBazaar::updateLabel( int num )
     strcpy(buf, "< Empty >");
   } else {
     if(arsenal_[num]->after > 1)
-      sprintf(buf, "%s (%d)", (arsenal_[num]->weapon)->name_,
-              arsenal_[num]->after);
+      snprintf(buf, sizeof(buf), "%s (%d)", (arsenal_[num]->weapon)->name_,
+               arsenal_[num]->after);
     else
       strcpy(buf, (arsenal_[num]->weapon)->name_);
   }
@@ -348,11 +348,11 @@ void BTBazaar::hide()
   form_->unmanage();
   message_->unmanage();
   XtVaSetValues (add_button_->getWidget(), XmNfillOnArm, True,
-		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, NULL);
   XtVaSetValues (remove_button_->getWidget(), XmNfillOnArm, True,
-		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, NULL);
   XtVaSetValues (done_button_->getWidget(), XmNfillOnArm, True,
-		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, 0);
+		 XtVaTypedArg, XmNforeground, XmRString, "blue", 7, NULL);
   dimmed_ = 0;
 
   for ( int i = 0 ; i < BT_ARSENAL_SIZE ; i++ ) {
@@ -390,9 +390,9 @@ void BTBazaar::handleWeaponSelection()
 
   static char buf[2048]; // Big enough for lengthy weapon description
 
-  sprintf(buf, "Price:    %hu\nDuration: %hu lines\n\n%s", 
-          weapon->price_ * (1 + carter_), weapon->duration_,
-	  weapon->description_);
+  snprintf(buf, sizeof(buf), "Price:    %hu\nDuration: %hu lines\n\n%s",
+           weapon->price_ * (1 + carter_), weapon->duration_,
+	   weapon->description_);
 
   weap_desc_->setText(buf, 1, BT_BAZAAR_WEAP_DESC_WIDTH);
 }

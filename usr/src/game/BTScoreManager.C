@@ -47,26 +47,26 @@ void BTScoreManager::updateDisplay() {
   char *base = s;
 
   if (widget_rep_) {
-    sprintf (s, "%d     ", (int) rep_.score_);
+    snprintf (s, sizeof(s), "%d     ", (int) rep_.score_);
     widget_rep_->setText (0, 1, s);
-    sprintf (s, "%d      ", (int) rep_.op_score_);
+    snprintf (s, sizeof(s), "%d      ", (int) rep_.op_score_);
     widget_rep_->setText (1, 1, s);
-    sprintf (s, "%d       ", (int) rep_.lines_);
+    snprintf (s, sizeof(s), "%d       ", (int) rep_.lines_);
     widget_rep_->setText (3, 1, s);
-    sprintf (s, "%d       ", (int) rep_.op_lines_);
+    snprintf (s, sizeof(s), "%d       ", (int) rep_.op_lines_);
     widget_rep_->setText (4, 1, s);
-    sprintf (s, "%d       ", (int) rep_.funds_);
+    snprintf (s, sizeof(s), "%d       ", (int) rep_.funds_);
     widget_rep_->setText (6, 1, s);
 
     if (spy_on_ && recon_) {
-      sprintf (s, "%d      ", (int) recon_->adjustFunds (rep_.op_funds_));
+      snprintf (s, sizeof(s), "%d      ", (int) recon_->adjustFunds (rep_.op_funds_));
       widget_rep_->setText (7, 1, s);
-      sprintf (s, "%d      ", (int) lines_til_baz_);
+      snprintf (s, sizeof(s), "%d      ", (int) lines_til_baz_);
       widget_rep_->setText (9, 1, s);
-      sprintf (s, "         ");
+      snprintf (s, sizeof(s), "         ");
       widget_rep_->setText (8, 1, s);
     } else {
-      sprintf (s, "%d       ", (int) lines_til_baz_);
+      snprintf (s, sizeof(s), "%d       ", (int) lines_til_baz_);
       widget_rep_->setText (8, 1, s);
     }
   }
@@ -110,6 +110,7 @@ void BTScoreManager::receive (BTRingPacket *packet) {
     case BT_KEATING:
       keating_ = rep_.op_funds_;
       break;
+    default: break;
     }
     break;
   }
@@ -124,6 +125,7 @@ void BTScoreManager::receive (BTRingPacket *packet) {
     case BT_REAGAN:
       rep_.funds_ *= -1;
       break;
+    default: break;
     }
     break;
   }
@@ -202,6 +204,7 @@ void BTScoreManager::receive (BTRingPacket *packet) {
       max_funds_ = rep_.funds_;
     break;
   }
+  default: break;
   }
 
   if (need_update_) {

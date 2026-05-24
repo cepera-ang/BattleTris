@@ -394,6 +394,7 @@ void BTComputer::receive (BTRingPacket *packet) {
       upsidedown_ = 1;
       break;
     }
+    default:
       break;
     }
     break;

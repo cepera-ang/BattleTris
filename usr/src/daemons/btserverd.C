@@ -29,7 +29,7 @@ using namespace std;
 #include "BTProtocol.H"
 
 BTConfigFile *g_conf;				// Configuration file object
-char *configfile = "btserver.cf";		// Default config file path
+const char *configfile = "btserver.cf";		// Default config file path
 
 static int port = BT_SERVER_PORT;		// Default server port
 static int nslaves = 5;				// Default number of slaves

@@ -14,7 +14,7 @@ using namespace std;
 #include "ParsedFile.H"
 #include "BTConfigFile.H"
 
-static char *BTCONFIGFILE_DEFPATH = "/";
+static char BTCONFIGFILE_DEFPATH[] = "/";
 
 BTConfigFile::BTConfigFile(const char *configfile)
 : status_(BTCONFIGFILE_OK), datadir_(0), logsdir_(0), pipedir_(0), slvpath_(0)
@@ -91,28 +91,28 @@ BTConfigFile::BTConfigFile(const BTConfigFile& other)
 : status_(BTCONFIGFILE_OK), datadir_(0), logsdir_(0), pipedir_(0), slvpath_(0)
 {
   if(other.datadir_) {
-    if(datadir_ = new char [strlen(other.datadir_) + 1])
+    if((datadir_ = new char [strlen(other.datadir_) + 1]))
       strcpy(datadir_, other.datadir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.logsdir_) {
-    if(logsdir_ = new char [strlen(other.logsdir_) + 1])
+    if((logsdir_ = new char [strlen(other.logsdir_) + 1]))
       strcpy(logsdir_, other.logsdir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.pipedir_) {
-    if(pipedir_ = new char [strlen(other.pipedir_) + 1])
+    if((pipedir_ = new char [strlen(other.pipedir_) + 1]))
       strcpy(pipedir_, other.pipedir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.slvpath_) {
-    if(slvpath_ = new char [strlen(other.slvpath_) + 1])
+    if((slvpath_ = new char [strlen(other.slvpath_) + 1]))
       strcpy(slvpath_, other.slvpath_);
     else
       status_ = BTCONFIGFILE_MEMERR;
@@ -133,28 +133,28 @@ BTConfigFile& BTConfigFile::operator=(const BTConfigFile& other)
   status_ = BTCONFIGFILE_OK;
 
   if(other.datadir_) {
-    if(datadir_ = new char [strlen(other.datadir_) + 1])
+    if((datadir_ = new char [strlen(other.datadir_) + 1]))
       strcpy(datadir_, other.datadir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.logsdir_) {
-    if(logsdir_ = new char [strlen(other.logsdir_) + 1])
+    if((logsdir_ = new char [strlen(other.logsdir_) + 1]))
       strcpy(logsdir_, other.logsdir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.pipedir_) {
-    if(pipedir_ = new char [strlen(other.pipedir_) + 1])
+    if((pipedir_ = new char [strlen(other.pipedir_) + 1]))
       strcpy(pipedir_, other.pipedir_);
     else
       status_ = BTCONFIGFILE_MEMERR;
   }
 
   if(other.slvpath_) {
-    if(slvpath_ = new char [strlen(other.slvpath_) + 1])
+    if((slvpath_ = new char [strlen(other.slvpath_) + 1]))
       strcpy(slvpath_, other.slvpath_);
     else
       status_ = BTCONFIGFILE_MEMERR;
