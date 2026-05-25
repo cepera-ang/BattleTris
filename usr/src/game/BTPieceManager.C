@@ -114,6 +114,8 @@ void BTPieceManager::receive (BTRingPacket *packet) {
       hap_on_++;
       break;
     }
+    default:
+      break;
     }
     break;
   }
@@ -145,9 +147,13 @@ void BTPieceManager::receive (BTRingPacket *packet) {
       broken_ = 0;
       break;
     }
+    default:
+      break;
     }
     break;
   }
+  default:
+    break;
   }
   pass (packet);
 }    

@@ -22,7 +22,7 @@ public:
   virtual void removeTimeout( unsigned long ) = 0;
   virtual BTPalette *getPalette() { return palette_; };
   virtual void flush() {}
-  ~BTDisplay() { delete palette_; }
+  virtual ~BTDisplay() { delete palette_; }
   BTPalette *palette_;
 
 protected:

@@ -54,7 +54,7 @@ BTWeaponManager::BTWeaponManager(BTFormWidget *parent, int x, int y,
 
     for ( int i = 0 ; i < BT_ARSENAL_SIZE ; i ++ ) {
       label[6] = '0' + i;
-      sprintf (s, " %d.  %s", (i + 1) % 10, arsenal_->getName(i));
+      snprintf (s, sizeof(s), " %d.  %s", (i + 1) % 10, arsenal_->getName(i));
       label_[i] = new BTPushButtonWidget(parent, label, s);
       label_[i]->size( BT_ARSENAL_X, height,
 		       BT_ARSENAL_WIDTH,
@@ -64,7 +64,7 @@ BTWeaponManager::BTWeaponManager(BTFormWidget *parent, int x, int y,
       label_[i]->alignLeft();
       label_[i]->setLabel( s );
 //					 BT_ARSENAL_WIDTH, 35);
-      XtVaSetValues (label_[i]->getWidget(), XmNfillOnArm, False, 0); 
+      XtVaSetValues (label_[i]->getWidget(), XmNfillOnArm, False, NULL);
       label_[i]->manage();
     }
 
@@ -149,6 +149,7 @@ void BTWeaponManager::receive (BTRingPacket *packet) {
       }
     }
   }
+  default: break;
   }
   pass (packet);
 }
@@ -167,10 +168,10 @@ void BTWeaponManager::update( int num ) {
   }
   if ( label_ )
     for ( int i = start ; i <= finish ; i ++ ) {
-      if (arsenal_->quantity_[i] > 1) 
-        sprintf (ss, "(%d)", arsenal_->quantity_[i]);
-      else sprintf (ss, " ");
-      sprintf (s, " %d.  %s %s", (i + 1) % 10, arsenal_->getName(i), ss);
+      if (arsenal_->quantity_[i] > 1)
+        snprintf (ss, sizeof(ss), "(%d)", arsenal_->quantity_[i]);
+      else snprintf (ss, sizeof(ss), " ");
+      snprintf (s, sizeof(s), " %d.  %s %s", (i + 1) % 10, arsenal_->getName(i), ss);
       Dimension width = label_[i]->width();
       label_[i]->setLabel(s);
 /*

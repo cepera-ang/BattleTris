@@ -44,13 +44,13 @@ BTBiff::BTBiff(BTWidget *parent, BTPixmap *sleep, BTPixmap *chal, DevAudio *dev)
 	if (chal)
 		chal->ref();
 
-	XtVaGetValues (parent->getWidget(), 
+	XtVaGetValues (parent->getWidget(),
 	    XmNvisual, &visual,
 	    XmNbackgroundPixmap, &bg_pixmap,
 	    XmNborderPixmap, &brdr_pixmap,
 	    XmNcolormap, &colormap,
 	    XmNdepth, &depth,
-	    0);
+	    NULL);
 
 	XtSetArg(args[n], XmNallowShellResize, True); n++;
 	XtSetArg(args[n], XmNvisual, visual); n++;

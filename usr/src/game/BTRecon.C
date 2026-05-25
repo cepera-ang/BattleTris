@@ -111,7 +111,10 @@ long BTRecon::adjustFunds (long funds) {
     return (funds);
   case BT_CONDOR:
     return (funds);
-  }       
+  default:
+    break;
+  }
+  return funds;
 }
 
 
@@ -141,7 +144,7 @@ old_lines_ (0) {
 
   drawing_area_->size( BT_RECON_X, BT_RECON_Y );
 
-  XtVaSetValues (drawing_area_->getWidget(), XtVaTypedArg, XmNbackground, XmRString, "black", 6, 0);
+  XtVaSetValues (drawing_area_->getWidget(), XtVaTypedArg, XmNbackground, XmRString, "black", 6, NULL);
 
   drawing_area_->addExposeCallback( _reconcb2_, this );
 //  XtAddCallback (rep_, XmNexposeCallback, _reconcb_, this);
@@ -177,6 +180,8 @@ void BTRecon::receive (BTRingPacket *packet) {
       toplevel_->size( -1, -1, BT_RECON_BIG );
       drawing_area_->manage();
     }
+    default:
+      break;
     }
     break;
   }
@@ -213,13 +218,17 @@ void BTRecon::receive (BTRingPacket *packet) {
       switch (board->motivation()) {
       case BT_AMES:
       case BT_ACE:
-      case BT_CONDOR: 
+      case BT_CONDOR:
         drawBoard (board);
         break;
+      default:
+        break;
       }
-      break;
     }
+    break;
   }
+  default:
+    break;
   }
 
   pass (packet);

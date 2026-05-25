@@ -84,10 +84,10 @@ BTPlayer::BTPlayer(const char *name)
 
     strcpy(namebuf, name);
 
-    if(ptr = strchr(namebuf, '@'))
+    if((ptr = strchr(namebuf, '@')))
       *ptr = '\0';
 
-    if(pwentry = getpwnam(namebuf)) {
+    if((pwentry = getpwnam(namebuf))) {
       // Grab the user\'s real name from the gecos field
       bzero((char *) gecos_, sizeof(gecos_));
       strncpy(gecos_, pwentry->pw_gecos, BT_GECOSNAMELEN);
@@ -96,7 +96,7 @@ BTPlayer::BTPlayer(const char *name)
       // separated and contains other info such as office phone number,
       // so only grab the stuff up to the first comma
 
-      if(ptr = strchr(gecos_, ','))
+      if((ptr = strchr(gecos_, ',')))
 	*ptr = '\0';
     }
   }
@@ -271,8 +271,8 @@ void BTPlayer::concatTime(char *buf, long secs)
   hours = mins / 60;
   mins %= 60;
 
-  sprintf(timebuf, "%2.2ld:%2.2ld:%2.2ld",
-          hours > 99 ? 99 : hours, mins, secs); 
+  snprintf(timebuf, sizeof(timebuf), "%2.2ld:%2.2ld:%2.2ld",
+           hours > 99 ? 99 : hours, mins, secs); 
   strcat(buf, timebuf);
 }
 
@@ -280,8 +280,8 @@ char *BTPlayer::formatInfo()
 {
   static char buf[2048]; // Big enough for lots of text
 
-  sprintf(buf, "          Name: %s\n          Rank: %lu\n          Wins: %lu\n        Losses: %lu\n Highest score: %lu\n Highest lines: %lu\n Highest funds: %lu\n        Streak: %lu",
-          gecos_, rank_, wins_, losses_, highScore_, highLines_, highFunds_, streak_);
+  snprintf(buf, sizeof(buf), "          Name: %s\n          Rank: %lu\n          Wins: %lu\n        Losses: %lu\n Highest score: %lu\n Highest lines: %lu\n Highest funds: %lu\n        Streak: %lu",
+           gecos_, rank_, wins_, losses_, highScore_, highLines_, highFunds_, streak_);
 
   if(streakType_ == BTSTREAK_LOSSES) {
     strcat(buf, " loss");
@@ -357,7 +357,7 @@ int BTPlayer::plan(char *nickname, int namelen, char *plan, int planlen)
 
   strcpy(namebuf, key_);
 
-  if(ptr = strchr(namebuf, '@'))
+  if((ptr = strchr(namebuf, '@')))
     *ptr = '\0';
 
   if((pwdentry = getpwnam(namebuf)) == 0)

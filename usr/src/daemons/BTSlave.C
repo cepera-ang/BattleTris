@@ -35,7 +35,7 @@ BTSlave::BTSlave(const char *logpath, int prindex, int maxclients)
   short err;
   int i;
 
-  sprintf(pathbuf, "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, prindex);
+  snprintf(pathbuf, sizeof(pathbuf), "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, prindex);
 
   UnixAddress masterAddr(pathbuf);
   UnixAddress slaveAddr;

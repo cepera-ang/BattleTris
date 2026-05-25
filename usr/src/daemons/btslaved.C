@@ -29,7 +29,7 @@ using namespace std;
 
 BTConfigFile *g_conf;				// Configuration file object
 
-static char *configfile = "btserver.cf";	// Configuration file pathname
+static const char *configfile = "btserver.cf";	// Configuration file pathname
 static int prindex = -1;			// Daemon process index
 
 void usage(char *pname)
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  sprintf(logpath, "%s/%s%ld.log", g_conf->logsdir(), BTSD_LOGFILE, getpid());
+  snprintf(logpath, sizeof(logpath), "%s/%s%d.log", g_conf->logsdir(), BTSD_LOGFILE, (int)getpid());
   BTSlave slave(logpath, prindex);
 
   if((err = slave.err()) < 0) {

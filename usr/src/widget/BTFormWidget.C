@@ -31,7 +31,7 @@ BTFormWidget::placeChild(BTWidget *child, Dimension x, Dimension y)
 	    XmNleftAttachment, XmATTACH_POSITION,
 	    XmNleftPosition, x,
 	    XmNtopAttachment, XmATTACH_POSITION,
-	    XmNtopPosition, y, 0);
+	    XmNtopPosition, y, NULL);
 }
 
 void
@@ -47,5 +47,5 @@ BTFormWidget::placeChild(BTWidget *child, Dimension x1, Dimension y1,
 	    XmNrightPosition, x2,
 	    XmNbottomAttachment, XmATTACH_POSITION,
 	    XmNbottomPosition, y2,
-	    0);
+	    NULL);
 }

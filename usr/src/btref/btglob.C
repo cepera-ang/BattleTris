@@ -24,7 +24,7 @@
  * Simple globbing-style pattern match function
  */
 
-int hasglobchars(register char *pat)
+int hasglobchars(char *pat)
 {
   while(*pat != GLOB_EOS) {
     switch(*pat++) {
@@ -42,11 +42,11 @@ int hasglobchars(register char *pat)
   return 0;
 }
 
-int globmatch(register char *text, register char *pat)
+int globmatch(char *text, char *pat)
 {
-  register char *oldtext = text;
-  register int tc = *text++;
-  register int pc;
+  char *oldtext = text;
+  int tc = *text++;
+  int pc;
 
   int prev = GLOB_EOS;
   int matchrange = 0;

@@ -1,7 +1,7 @@
 #ifndef BTGLOB_H
 #define BTGLOB_H
 
-extern int hasglobchars(register char *pat);
-extern int globmatch(register char *text, register char *pat);
+extern int hasglobchars(char *pat);
+extern int globmatch(char *text, char *pat);
 
 #endif

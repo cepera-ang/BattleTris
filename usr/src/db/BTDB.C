@@ -471,7 +471,7 @@ btdb_hash_t BTDB::dbhash(const char *key)
   char c;
   int i;
 
-  for(ptr = key, i = 1; c = *ptr++; i++)
+  for(ptr = key, i = 1; (c = *ptr++); i++)
     hval += c * i;
 
   return hval % nhash_;

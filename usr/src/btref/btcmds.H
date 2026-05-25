@@ -11,8 +11,8 @@
 typedef void (*handler_t)(int, char**);
 
 struct Command {
-   char *name_;
-   char *help_;
+   const char *name_;
+   const char *help_;
    handler_t handler_;
 };
 

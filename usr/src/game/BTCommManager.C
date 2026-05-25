@@ -95,8 +95,10 @@ void BTCommManager::receive(BTRingPacket *packet)
     break;
   }
 
+  default:
+    break;
   }
- 
+
   pass(packet);
 }
 
@@ -161,6 +163,8 @@ void BTCommManager::receiveFromLocal(BTRingPacket *packet)
     break;
   }
 
+  default:
+    break;
   }
 
   pass(packet);
@@ -248,6 +252,8 @@ void BTCommManager::receiveFromSibling(BTRingPacket *packet)
     break;
   }
 
+  default:
+    break;
   }
 
   delete packet;

@@ -112,7 +112,7 @@ BTAbout::BTAbout(BTWidget *parent, BTPixmap *image)
 
   right_drawing_area_->manage();
 
-  sprintf(labelbuf, "Version %d.%d", BT_MAJOR_VER, BT_MINOR_VER);
+  snprintf(labelbuf, sizeof(labelbuf), "Version %d.%d", BT_MAJOR_VER, BT_MINOR_VER);
   version_ = new BTLabelWidget(form_, "version", labelbuf, 640, 50);
 
   version_->attachLeftWidget(left_drawing_area_);

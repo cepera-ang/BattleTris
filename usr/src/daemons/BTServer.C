@@ -54,6 +54,7 @@ BTServer::BTServer(int nslaves, int port)
   char buf[16];
 
   UnixAddress addr;
+  size_t addrpathsz;
   char *addrpath;
 
   strcpy(pathbuf, g_conf->logsdir());
@@ -70,8 +71,8 @@ BTServer::BTServer(int nslaves, int port)
   // Allocate 16 extra bytes so we can concatenate the daemon prindex
   // and a delimeter onto the end of this buffer.
 
-  if((addrpath =
-        new char [strlen(g_conf->pipedir()) + strlen(BTMD_PIPENAM) + 16]) == 0)
+  addrpathsz = strlen(g_conf->pipedir()) + strlen(BTMD_PIPENAM) + 16;
+  if((addrpath = new char [addrpathsz]) == 0)
     goto memerr;
 
   strcpy(pidfile_, g_conf->datadir());
@@ -102,7 +103,7 @@ BTServer::BTServer(int nslaves, int port)
     }
   }
 
-  sprintf(buf, "%d", mypid);
+  snprintf(buf, sizeof(buf), "%d", mypid);
   write(pidfd, buf, strlen(buf) + 1);
   close(pidfd);
 
@@ -127,7 +128,7 @@ BTServer::BTServer(int nslaves, int port)
   *log_ << "INFO: Spawning " << nslaves_ << " slave daemons" << endl;
 
   for(i = 0; i < nslaves; i++) {
-    sprintf(addrpath, "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, i);
+    snprintf(addrpath, addrpathsz, "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, i);
 
     unlink(addrpath);
     addr.path(addrpath);
@@ -267,7 +268,7 @@ short BTServer::run()
 
 void BTServer::toggleListener()
 {
-  if(enabled_ = 1 - enabled_)
+  if((enabled_ = 1 - enabled_))
     *log_ << "INFO: Listening for incoming connections\n" << flush;
   else
     *log_ << "INFO: Disabling listening for connections\n" << flush;
@@ -326,7 +327,7 @@ void BTServer::killSlaves()
       if(sockets_[i])
         delete sockets_[i];
 
-      sprintf(addrpath, "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, i);
+      snprintf(addrpath, sizeof(addrpath), "%s/%s%d", g_conf->pipedir(), BTMD_PIPENAM, i);
       unlink(addrpath);
     }
 

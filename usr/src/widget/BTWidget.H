@@ -53,8 +53,8 @@ public:
   void map() { XMapWindow(XtDisplay(me_), XtWindow(me_)); }
   void unmap() { XUnmapWindow(XtDisplay(me_), XtWindow(me_)); }
 
-  virtual void resize() { XtVaSetValues( me_, XmNresize, True, XmNrecomputeSize, True, 0 ); }
-  virtual void noResize() { XtVaSetValues( me_, XmNresize, False, XmNrecomputeSize, False, 0 ); }
+  virtual void resize() { XtVaSetValues( me_, XmNresize, True, XmNrecomputeSize, True, NULL ); }
+  virtual void noResize() { XtVaSetValues( me_, XmNresize, False, XmNrecomputeSize, False, NULL ); }
 
   Widget getWidget() { return me_; }
   BTWidget *getParent() { return parent_; }
@@ -78,16 +78,16 @@ public:
   void attachRightForm();
 
   void leftOffset( Dimension num ) {
-    XtVaSetValues( me_, XmNleftOffset, num, 0 );
+    XtVaSetValues( me_, XmNleftOffset, num, NULL );
   }
   void rightOffset( Dimension num ) {
-    XtVaSetValues( me_, XmNrightOffset, num, 0 );
+    XtVaSetValues( me_, XmNrightOffset, num, NULL );
   }
   void topOffset( Dimension num ) {
-    XtVaSetValues( me_, XmNtopOffset, num, 0 );
+    XtVaSetValues( me_, XmNtopOffset, num, NULL );
   }
   void bottomOffset( Dimension num ) {
-    XtVaSetValues( me_, XmNbottomOffset, num, 0 );
+    XtVaSetValues( me_, XmNbottomOffset, num, NULL );
   }
 
   void size( Dimension x = -1, Dimension y = -1, Dimension w = -1, Dimension h = -1 );
@@ -98,13 +98,13 @@ public:
 
   Dimension width() {
     Dimension w;
-    XtVaGetValues( me_, XmNwidth, &w, 0 );
+    XtVaGetValues( me_, XmNwidth, &w, NULL );
     return w;
   }
 
   Dimension height() {
     Dimension h;
-    XtVaGetValues( me_, XmNheight, &h, 0 );
+    XtVaGetValues( me_, XmNheight, &h, NULL );
     return h;
   }
 

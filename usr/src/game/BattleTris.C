@@ -373,7 +373,7 @@ static Visual *find_24_bit_true_color(Display *display, int screen)
   int colormap_size = 0;
   int chosen = -1;
 
-  for(register int i = 0; i < num_vis; i++) {
+  for(int i = 0; i < num_vis; i++) {
     if(vis_array[i].colormap_size > colormap_size && vis_array[i].depth == 24){
       colormap_size = vis_array[i].colormap_size;
       vis = vis_array[i].visual;
@@ -412,7 +412,7 @@ static Visual *find_deepest_pseudo(Display *display, int screen, int *depth)
   int colormap_size = 0;
   int chosen = -1;
 
-  for(register int i = 0; i < num_vis; i++) {
+  for(int i = 0; i < num_vis; i++) {
     if(vis_array[i].colormap_size > colormap_size) {
       colormap_size = vis_array[i].colormap_size;
       *depth = vis_array[i].depth;
@@ -637,10 +637,10 @@ static int toolkit_init(int *argcptr, char *argv[])
     return BT_USAGE;
   }
 
-  if((atom = XmInternAtom(g_display, "WM_SAVE_YOURSELF", True)) != None)
+  if((atom = XmInternAtom(g_display, (char *)"WM_SAVE_YOURSELF", True)) != None)
     XmAddWMProtocolCallback(g_toplevel, atom, toolkit_destroy, (caddr_t) NULL);
 
-  if((atom = XmInternAtom(g_display, "WM_DELETE_WINDOW", True)) != None)
+  if((atom = XmInternAtom(g_display, (char *)"WM_DELETE_WINDOW", True)) != None)
     XmAddWMProtocolCallback(g_toplevel, atom, toolkit_destroy, (caddr_t) NULL);
 
   XtAppAddInput(g_appctx, g_signalfds[0], (XtPointer) XtInputReadMask,

@@ -46,8 +46,8 @@ BTNetworkEntry::BTNetworkEntry(char *userName, char *hostName, InetAddress& addr
   assert(userName != 0);
   assert(hostName != 0);
 
-  sprintf(key(), "%-.*s%-.*s%-d", BT_USERNAMELEN,
-          userName, BT_HOSTABBRLEN, hostName, port_);
+  snprintf(key(), BTDBRECORD_KEYLEN + 1, "%-.*s%-.*s%-d", BT_USERNAMELEN,
+           userName, BT_HOSTABBRLEN, hostName, port_);
 
   bzero((char *) userName_, sizeof(userName_));
   bzero((char *) hostName_, sizeof(hostName_));

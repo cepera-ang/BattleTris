@@ -68,70 +68,70 @@ BTWidget::~BTWidget()
 
 void BTWidget::attachLeftWidget( BTWidget *widget ) {
   XtVaSetValues( me_, XmNleftAttachment, XmATTACH_WIDGET, XmNleftWidget,
-                 widget->getWidget(), 0 );
+                 widget->getWidget(), NULL );
 }
 
 void BTWidget::attachRightWidget( BTWidget *widget ) {
   XtVaSetValues( me_, XmNrightAttachment, XmATTACH_WIDGET, XmNrightWidget,
-                 widget->getWidget(), 0 );
+                 widget->getWidget(), NULL );
 }
 
 void BTWidget::attachTopWidget( BTWidget *widget ) {
   XtVaSetValues( me_, XmNtopAttachment, XmATTACH_WIDGET, XmNtopWidget,
-                 widget->getWidget(), 0 );
+                 widget->getWidget(), NULL );
 }
 
 void BTWidget::attachBottomWidget( BTWidget *widget ) {
   XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_WIDGET, XmNbottomWidget,
-                 widget->getWidget(), 0 );
+                 widget->getWidget(), NULL );
 }
 
 void BTWidget::attachLeftPosition( Dimension num ) {
   XtVaSetValues( me_, XmNleftAttachment, XmATTACH_POSITION, XmNleftPosition,
-                 num, 0 );
+                 num, NULL );
 }
 
 void BTWidget::attachRightPosition( Dimension num ) {
-  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_POSITION, XmNrightPosition, num, 0 );
+  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_POSITION, XmNrightPosition, num, NULL );
 }
 
 void BTWidget::attachTopPosition( Dimension num ) {
-  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_POSITION, XmNtopPosition, num, 0 );
+  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_POSITION, XmNtopPosition, num, NULL );
 }
 
 void BTWidget::attachBottomPosition( Dimension num ) {
   XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_POSITION, XmNbottomPosition,
-                num, 0 );
+                num, NULL );
 }
 
 void BTWidget::attachLeftNone() {
-  XtVaSetValues( me_, XmNleftAttachment, XmATTACH_NONE, 0 );
+  XtVaSetValues( me_, XmNleftAttachment, XmATTACH_NONE, NULL );
 }
 
 void BTWidget::attachTopNone() {
-  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_NONE, 0 );
+  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_NONE, NULL );
 }
 
 void BTWidget::attachBottomNone() {
-  XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_NONE, 0 );
+  XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_NONE, NULL );
 }
 
 void BTWidget::attachRightNone() {
-  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_NONE, 0 );
+  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_NONE, NULL );
 }
 
 void BTWidget::attachLeftForm() {
-  XtVaSetValues( me_, XmNleftAttachment, XmATTACH_FORM, 0 );
+  XtVaSetValues( me_, XmNleftAttachment, XmATTACH_FORM, NULL );
 }
 
 void BTWidget::attachTopForm() {
-  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_FORM, 0 );
+  XtVaSetValues( me_, XmNtopAttachment, XmATTACH_FORM, NULL );
 }
 
 void BTWidget::attachBottomForm() {
-  XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_FORM, 0 );
+  XtVaSetValues( me_, XmNbottomAttachment, XmATTACH_FORM, NULL );
 }
 
 void BTWidget::attachRightForm() {
-  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_FORM, 0 );
+  XtVaSetValues( me_, XmNrightAttachment, XmATTACH_FORM, NULL );
 }

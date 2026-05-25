@@ -86,7 +86,7 @@ BTGame::BTGame (BTWidget *parent, BTSoundManager *sound_manager,
   
   drawing_area_->size( BT_BOARD_X, BT_BOARD_Y );
   
-  XtVaSetValues (*drawing_area_, XtVaTypedArg, XmNbackground, XmRString, "black", 6, 0);
+  XtVaSetValues (*drawing_area_, XtVaTypedArg, XmNbackground, XmRString, "black", 6, NULL);
   
   message_ = new BTLabelWidget (form_, "message", " ");
   
@@ -556,6 +556,8 @@ void BTGame::receive (BTRingPacket *packet) {
       base_drop_time_ <<= 1;
       break;
     }
+    default:
+      break;
     }
     break;
   }
@@ -645,9 +647,13 @@ void BTGame::receive (BTRingPacket *packet) {
       fast_drop_time_ >>= 1;
       break;
     }
+    default:
+      break;
     }
     break;
   }
+  default:
+    break;
   }
   pass (packet);
 }
