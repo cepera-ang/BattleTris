@@ -134,9 +134,6 @@ short BTSlave::run()
   timeval polltime;
   SELECTARGTYPE set;
 
-  polltime.tv_sec = BTSD_POLL_SECS;
-  polltime.tv_usec = BTSD_POLL_USECS;
-
   for(;;) {
     if((err_ = dbserver_->update()) < 0)
       return err_;
@@ -162,6 +159,9 @@ short BTSlave::run()
       terminate();
       exit(0);
     }
+
+    polltime.tv_sec = BTSD_POLL_SECS;
+    polltime.tv_usec = BTSD_POLL_USECS;
 
     if(select(maxfd_ + 1, (SELECTARGTYPE *) &set, (SELECTARGTYPE *) 0,
               (SELECTARGTYPE *) 0, &polltime) > 0) {
