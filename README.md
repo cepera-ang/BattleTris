@@ -18,13 +18,13 @@ skills, he or she may also play the computer (though not for ranking).
 BattleTris was written at Brown University as a CS32 final project in
 spring 1994 by Bryan Cantrill, Charlie Hoecker and Mike Shapiro.
 It was revived several times between 1994 and 2001, and then
-revived again in 2026.  (A fuller history -- including the inspiration
-for BattleTris -- can be found in
+exhumed in 2026 by Adam Leventhal.  (A fuller history -- including
+the inspiration for BattleTris in Wesleyan Tetris -- can be found 
 [here](https://bcantrill.dtrace.org/2026/05/25/a-portentous-reunion/).)
 
 ## Requirements
 
-BattleTris is a time
+BattleTris is a bit of a time
 capsule of Unix on the desktop ca. 1994: it was originally written for
 Solaris on SPARC, using [X11](https://en.wikipedia.org/wiki/X_Window_System) and
 [Motif](https://en.wikipedia.org/wiki/Motif_(software)).
@@ -34,7 +34,7 @@ and on Linux.  To compile BattleTris, you should be able to
 (more or less) run `configure`.
 
 Note that BattleTris dates from a time that the highest resolution
-monitors were 1600 by 1280; those on modern (higher resolution) displays
+monitors were 1600x1280; those on modern (higher resolution) displays
 may find that the resolution of output needs to be manually lowered to
 make the game playable.
 
@@ -49,7 +49,7 @@ run `BattleTris -X`.
 
 ## Gameplay
 
-After connection is established, each player begins by  playing  tetris
+After connection is established, each player begins by  playing  Tetris
 normally.   The  difference is that in addition to the standard pieces,
 there exists a die piece.  This is a one block piece that has  a  value
 from 1 to 6 pips.  Whenever a player gets a line, his or her "funds" go
