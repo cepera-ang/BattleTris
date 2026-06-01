@@ -415,8 +415,13 @@ void BTGame::exposeEvent () {
     board_->redraw();
     started_ = 1;
     startGame();
-  } else
+  } else {
+    // Redraw the falling piece too, not just the board, so an expose
+    // event doesn't leave the current piece missing.
+    if (current_piece_)
+      current_piece_->redraw();
     board_->redraw();
+  }
 }
 
 void BTGame::leaveBazaar() {
