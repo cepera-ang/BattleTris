@@ -1,6 +1,6 @@
-![BattleTris](usr/src/art/btstartup2.png)
+# BattleTris: Two-player networked Tetris with a twist
 
-Two-player networked Tetris with a twist
+![BattleTris](usr/src/art/btstartup2.png)
 
 ## History
 
