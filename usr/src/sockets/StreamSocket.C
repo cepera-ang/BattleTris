@@ -6,6 +6,9 @@
 /****************************************************************/
 
 #include "BTConfig.H"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #if STDC_HEADERS
 # include <stdlib.h>
@@ -39,15 +42,99 @@ using namespace std;
 
 #include "StreamSocket.H"
 
+#ifdef __EMSCRIPTEN__
+EM_JS(int, bt_ws_connect, (int fd), {
+  if (!Module.btNet) Module.btNet = { nextRoom: null, sock: {} };
+  if (!Module.btNet.sock[fd]) {
+    var base = Module.btWsUrl;
+    if (!base) {
+      var proto = location.protocol === "https:" ? "wss://" : "ws://";
+      base = proto + location.hostname + ":8099";
+    }
+    var room = "battletris";
+    try {
+      var q = new URLSearchParams(location.search);
+      room = q.get("room") || room;
+    } catch (e) {}
+    var url = base + (base.indexOf("?") >= 0 ? "&" : "?") + "room=" + encodeURIComponent(room);
+    var s = { ws: null, q: [], open: 0, broken: 0, out: [] };
+    var ws = new WebSocket(url);
+    ws.binaryType = "arraybuffer";
+    ws.onopen = function() {
+      s.open = 1;
+      for (var i = 0; i < s.out.length; i++) ws.send(s.out[i]);
+      s.out = [];
+    };
+    ws.onmessage = function(ev) {
+      var u = new Uint8Array(ev.data);
+      for (var i = 0; i < u.length; i++) s.q.push(u[i]);
+    };
+    ws.onclose = function() { s.broken = 1; s.open = 0; };
+    ws.onerror = function() { s.broken = 1; };
+    s.ws = ws;
+    Module.btNet.sock[fd] = s;
+  }
+  return 0;
+});
+
+EM_JS(int, bt_ws_send, (int fd, const char *buf, int len), {
+  var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null;
+  if (!s || s.broken) return -1;
+  var out = HEAPU8.slice(buf, buf + len);
+  if (s.open) s.ws.send(out);
+  else s.out.push(out);
+  return len;
+});
+
+EM_JS(int, bt_ws_avail, (int fd), {
+  var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null;
+  if (!s) return 0;
+  return s.q.length | 0;
+});
+
+EM_JS(int, bt_ws_packet_ready, (int fd), {
+  var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null;
+  if (!s) return 0;
+  if (s.q.length < 8) return 0;
+  var n = ((s.q[4] << 24) >>> 0) | ((s.q[5] << 16) >>> 0) | ((s.q[6] << 8) >>> 0) | (s.q[7] >>> 0);
+  return s.q.length >= (8 + n) ? 1 : 0;
+});
+
+EM_JS(int, bt_ws_broken, (int fd), {
+  var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null;
+  if (!s) return 0;
+  return s.broken ? 1 : 0;
+});
+
+EM_JS(int, bt_ws_recv, (int fd, char *buf, int len, int peek), {
+  var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null;
+  if (!s) return -1;
+  if (s.q.length < len) return 0;
+  for (var i = 0; i < len; i++) HEAPU8[buf + i] = s.q[i];
+  if (!peek) s.q.splice(0, len);
+  return len;
+});
+
+extern "C" int bt_wasm_socket_ready(int fd) {
+  return bt_ws_packet_ready(fd);
+}
+#endif
+
 StreamSocket::StreamSocket(InetAddress& addr)
+#ifdef __EMSCRIPTEN__
+: Socket(10000 + (rand() & 0x7fff)), in_peer_(0), un_peer_(0), in_addr_(addr)
+#else
 : Socket(socket(AF_INET, SOCK_STREAM, 0)), in_peer_(0), un_peer_(0),
   in_addr_(addr)
+#endif
 {
+#ifndef __EMSCRIPTEN__
   int nodelay = 1;
 
   if(setsockopt(sock(), IPPROTO_TCP, TCP_NODELAY,
      (char *) &nodelay, sizeof(nodelay)) < 0)
     cerr << "StreamSocket: Warning: Failed to set TCP_NODELAY" << endl;
+#endif
 }
 
 StreamSocket::StreamSocket(UnixAddress& addr)
@@ -83,11 +170,20 @@ StreamSocket::~StreamSocket()
   if(un_peer_)
     delete un_peer_;
 
+#ifndef __EMSCRIPTEN__
   close(sock());
+#endif
 }
 
 short StreamSocket::connect(InetAddress& peer)
 {
+#ifdef __EMSCRIPTEN__
+  if (in_peer_ == 0)
+    in_peer_ = new InetAddress(peer);
+  if (bt_ws_connect(sock_) < 0)
+    return ERRSTREAMCONNECT;
+  return ERRSTREAMNOERR;
+#else
   assert(in_peer_ == 0);
   in_peer_ = new InetAddress(peer);
 
@@ -99,10 +195,15 @@ short StreamSocket::connect(InetAddress& peer)
 #endif
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::connect(InetAddress& peer, InetAddress& addr)
 {
+#ifdef __EMSCRIPTEN__
+  (void)addr;
+  return StreamSocket::connect(peer);
+#else
   assert(in_peer_ == 0);
   in_peer_ = new InetAddress(peer);
 
@@ -121,6 +222,7 @@ short StreamSocket::connect(InetAddress& peer, InetAddress& addr)
 
   addr.addr((sockaddr *) &name, namelen);
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::connect(UnixAddress& peer)
@@ -297,6 +399,14 @@ short StreamSocket::accept(StreamSocket *& sockptr)
 
 short StreamSocket::sendbuf(char *buf, int buflen, Address *dst)
 {
+#ifdef __EMSCRIPTEN__
+  (void)dst;
+  if (!in_peer_ && !un_peer_)
+    return ERRSTREAMSEND;
+  if (bt_ws_send(sock_, buf, buflen) < 0)
+    return bt_ws_broken(sock_) ? ERRSTREAMBROKEN : ERRSTREAMSEND;
+  return ERRSTREAMNOERR;
+#else
   assert(dst == 0);
   assert((in_peer_ != 0) || (un_peer_ != 0));
 
@@ -316,10 +426,20 @@ short StreamSocket::sendbuf(char *buf, int buflen, Address *dst)
   }
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::recvbuf(char *buf, int buflen, Address *src)
 {
+#ifdef __EMSCRIPTEN__
+  (void)src;
+  if (bt_ws_broken(sock_))
+    return ERRSTREAMBROKEN;
+  int n = bt_ws_recv(sock_, buf, buflen, 0);
+  if (n == buflen)
+    return ERRSTREAMNOERR;
+  return ERRSTREAMTIMEOUT;
+#else
   assert(src == 0);
   assert((in_peer_ != 0) || (un_peer_ != 0));
 
@@ -344,10 +464,20 @@ short StreamSocket::recvbuf(char *buf, int buflen, Address *src)
   }
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::peekbuf(char *buf, int buflen, Address *src)
 {
+#ifdef __EMSCRIPTEN__
+  (void)src;
+  if (bt_ws_broken(sock_))
+    return ERRSTREAMBROKEN;
+  int n = bt_ws_recv(sock_, buf, buflen, 1);
+  if (n == buflen)
+    return ERRSTREAMNOERR;
+  return ERRSTREAMTIMEOUT;
+#else
   assert(src == 0);
   assert((in_peer_ != 0) || (un_peer_ != 0));
 
@@ -372,10 +502,15 @@ short StreamSocket::peekbuf(char *buf, int buflen, Address *src)
   }
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::recvbuf(char *buf, int buflen, timeval& delay, Address *src)
 {
+#ifdef __EMSCRIPTEN__
+  (void)delay;
+  return StreamSocket::recvbuf(buf, buflen, src);
+#else
   assert(src == 0);
   assert((in_peer_ != 0) || (un_peer_ != 0));
 
@@ -411,10 +546,15 @@ short StreamSocket::recvbuf(char *buf, int buflen, timeval& delay, Address *src)
   }
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 short StreamSocket::peekbuf(char *buf, int buflen, timeval& delay, Address *src)
 {
+#ifdef __EMSCRIPTEN__
+  (void)delay;
+  return StreamSocket::peekbuf(buf, buflen, src);
+#else
   assert(src == 0);
   assert((in_peer_ != 0) || (un_peer_ != 0));
 
@@ -450,10 +590,14 @@ short StreamSocket::peekbuf(char *buf, int buflen, timeval& delay, Address *src)
   }
 
   return ERRSTREAMNOERR;
+#endif
 }
 
 int StreamSocket::ready()
 {
+#ifdef __EMSCRIPTEN__
+  return bt_ws_avail(sock_) > 0;
+#else
   timeval now;
   SELECTARGTYPE set;
 
@@ -462,10 +606,15 @@ int StreamSocket::ready()
 
   return select(sock() + 1, (SELECTARGTYPE *) &set, (SELECTARGTYPE *) 0,
                 (SELECTARGTYPE *) 0, &now) > 0;
+#endif
 }
 
 int StreamSocket::ready(timeval& delay)
 {
+#ifdef __EMSCRIPTEN__
+  (void)delay;
+  return StreamSocket::ready();
+#else
   SELECTARGTYPE set;
 
   FD_ZERO(&set);
@@ -473,6 +622,7 @@ int StreamSocket::ready(timeval& delay)
 
   return select(sock() + 1, (SELECTARGTYPE *) &set, (SELECTARGTYPE *) 0,
                 (SELECTARGTYPE *) 0, &delay) > 0;
+#endif
 }
 
 short StreamSocket::sendfd(int fd)

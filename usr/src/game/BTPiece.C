@@ -70,7 +70,11 @@ int BTPiece::moveTo (int x, int y) {
   for (i = 0; i < BT_PIECE_WIDTH; i++) {
     for (j = 0; j < BT_PIECE_HEIGHT; j++) {
       if (map_[i][j]) {
+#if defined(__EMSCRIPTEN__)
+        map_[i][j]->moveTo (x_ + i, y_ + j, 0);
+#else
         map_[i][j]->moveTo (x_ + i, y_ + j, !placed_);
+#endif
       }
     }
   }

@@ -9,6 +9,13 @@
 #include <limits.h>
 #include <math.h>
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#define BT_WASM_PHASE(s) EM_ASM({ if (Module.btPhase) Module.btPhase(UTF8ToString($0)); }, s)
+#else
+#define BT_WASM_PHASE(s)
+#endif
+
 #ifndef __sun
 #include <float.h>
 #endif
@@ -804,13 +811,15 @@ void BTComputer::clearCommando() {
 BTCOrders *BTComputer::activateCommando() {
   
   BTCOrders *orders,*o2;
-  int ok, prev_line = -1;
+  int ok, prev_line = -1, guard = 0;
   
   if (arsenal_ != weapon_manager_->arsenal_)
     reload();
   RWListIter<BTCOrders *> iter(commando_);
   iter.jump_before_head();
   do {
+    if (++guard > 256)
+      break;
     ok = iter.peek_next(orders);
     if ( ok ) {
       iter.inc();
@@ -997,6 +1006,8 @@ void BTComputer::checkMove( int x, int y, int o, BT_MOVE_DIR dir )
 
   if ( rescan_ )
     return;
+  if (++moves_checked_ > 4096)
+    return;
   o %= piece_->orientations_;
   if ( ( y < BT_BOARD_HGT ) && piece_->canMoveTo(x,y)
        && piece_positions_.unchecked(x,y,o) ) {
@@ -1041,7 +1052,7 @@ void BTComputer::checkMove( int x, int y, int o, BT_MOVE_DIR dir )
 	  }
     }
 
-  if ( moves_checked_++ % BTC_XMOVE_DELAY == 0 )
+  if ( moves_checked_ % BTC_XMOVE_DELAY == 0 )
     // have Ernie check XEvents -- we don't want to delay game play
     handleEvents();
 
@@ -1124,6 +1135,59 @@ void BTComputer::decide()
 
 int BTComputer::run()
 {
+  BT_WASM_PHASE("ernie-run");
+#if defined(__EMSCRIPTEN__)
+{
+  removeTimer();
+  if ( !game_ || bazaar_ || paused_ )
+    return 0;
+
+  delta_y_ = 1;
+  def_x_ = BT_DEFAULT_X;
+  def_y_ = BT_DEFAULT_Y;
+
+  if ( piece_ )
+    piece_->reset();
+  piece_ = piece_manager_->create(def_x_, def_y_);
+
+  int game_over = 1;
+  int start_x = (piece_no_ * 3) % BT_BOARD_WTH;
+  for (int tries = 0; tries < BT_BOARD_WTH && game_over; tries++) {
+    int x = (start_x + tries) % BT_BOARD_WTH;
+    int y = def_y_;
+    if ( !piece_->canMoveTo(x, y) )
+      continue;
+    while ( piece_->canMoveTo(x, y + 1) )
+      y++;
+    if ( piece_->moveTo(x, y) ) {
+      piece_manager_->dispose(piece_);
+      piece_ = 0;
+      board_manager_->checkLines();
+      score_manager_->rep_.score_ += BT_BOARD_HGT / 2;
+      score_manager_->update();
+      if ( comm_manager_ )
+	comm_manager_->flushWeapons();
+      piece_no_++;
+      game_over = 0;
+    }
+  }
+
+  if ( game_over ) {
+    if ( piece_ ) {
+      piece_->reset();
+      piece_ = 0;
+    }
+    game_ = 0;
+    sendPlusMe(BT_GAME_OVER);
+    return 1;
+  }
+
+  if ( delay_ && game_ )
+    id_ = DISPLAY->addTimeout(delay_, _cmptimeout_, this);
+  BT_WASM_PHASE("idle");
+  return 0;
+}
+#endif
   // check to see if we\'re already making a decision
   if ( deciding_ )
     return 0;
@@ -1159,7 +1223,12 @@ int BTComputer::run()
       piece_->reset();
     piece_ = piece_manager_->create (def_x_, def_y_);
     
+    int attempts = 0;
     do {
+      if (++attempts > BT_BOARD_WTH * 2) {
+	game_over = 1;
+	break;
+      }
       def_x_ = BT_DEFAULT_X - piece_->rot_ / 2;
     
       // Initialize the array that remembers what positions we\'ve checked
@@ -1193,11 +1262,16 @@ int BTComputer::run()
 	
 	
 	// Decide where to put the piece.
+	BT_WASM_PHASE("ernie-decide");
 	rescan_ = 1;
-	while ( rescan_ ) {
+	int rescans = 0;
+	while ( rescan_ && rescans++ < 8 ) {
 	  rescan_ = 0;
 	  decide( );
 	}
+	if ( rescan_ )
+	  game_over = 1;
+	BT_WASM_PHASE("ernie-place");
 	
 	// Now, we have to find a place to rotate the piece before
 	// we move it to it\'s place on the board.  We move it back
@@ -1238,7 +1312,7 @@ int BTComputer::run()
 		bail = 1;
 	    }
 	  }
-	} while (move_ok == 0 || bail);
+	} while (move_ok == 0 && !bail);
 
       	if ( move_ok && ! piece_->moveTo(move_.x,move_.y) )
 	  move_ok = 0;
@@ -1288,6 +1362,7 @@ int BTComputer::run()
   else if ( game_ )
     handleEvents();
 }
+  BT_WASM_PHASE("idle");
 return game_over;
 }
 

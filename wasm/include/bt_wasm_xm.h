@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct BTWasmWidget *Widget;
 typedef struct BTWasmDisplay Display;
@@ -85,6 +86,7 @@ typedef struct { unsigned long background_pixel; unsigned long border_pixel; Col
 #define XmN_OF_MANY 1
 #define XmCR_EXPOSE 1
 #define XmCR_ACTIVATE 2
+#define XmCR_VALUE_CHANGED 8
 #define XmRString "String"
 #define XtRImmediate "Immediate"
 #define XtRBoolean "Boolean"
@@ -285,8 +287,14 @@ void XtRemoveCallback(Widget, const char *, void (*)(), XtPointer);
 void XtVaSetValues(Widget, ...);
 void XtSetValues(Widget, Arg *, unsigned int);
 void XtVaGetValues(Widget, ...);
-void XtSetArg(Arg, const char *, long);
-template<class T> inline void XtSetArg(Arg, const char *, T *) {}
+inline void XtSetArg(Arg &arg, const char *name, long val) {
+  arg.name = name;
+  arg.value = val;
+}
+template<class T> inline void XtSetArg(Arg &arg, const char *name, T *val) {
+  arg.name = name;
+  arg.value = (long)(uintptr_t)val;
+}
 Widget XtParent(Widget);
 void XtFree(char *);
 void *XtMalloc(unsigned int);

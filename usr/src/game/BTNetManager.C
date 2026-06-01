@@ -133,6 +133,11 @@ BTNetManager::BTNetManager(BTWidget *widget, BTStartup *startup,
 	daemon_ = new StreamSocket(localAddr);
 	dbuf_.socket(daemon_);
 
+#ifdef __EMSCRIPTEN__
+	cout << "BattleTris: WASM net mode, daemon disabled" << endl << flush;
+	return;
+#endif
+
 	if (g_resources.no_server) {
 		cout << "BattleTris: Network Manager disabled for " <<
 		    username << endl << flush;
@@ -227,8 +232,10 @@ BTNetManager::~BTNetManager()
 		delete [] entrybuf_;
 
 	if (daemon_) {
-		dbuf_.sendpacket(BT_DISCONNECT);
-		sleep(2);
+		if (!g_resources.no_server) {
+			dbuf_.sendpacket(BT_DISCONNECT);
+			sleep(2);
+		}
 		delete daemon_;
 	}
 
@@ -237,6 +244,31 @@ BTNetManager::~BTNetManager()
 
 void BTNetManager::challenge(BTNetworkEntry *entry)
 {
+#ifdef __EMSCRIPTEN__
+  if (busy_) return;
+  busy_ = 1;
+  InetAddress wasmMyAddr;
+  peer_ = new StreamSocket(wasmMyAddr);
+  pbuf_.socket(peer_);
+  InetAddress wasmDestAddr(0, 0, 0);
+  short wasmErr = peer_->connect(wasmDestAddr);
+  if (wasmErr < 0) {
+    peerErr(wasmErr);
+    return;
+  }
+  BTNetManager::changeStatus();
+  startup_->showGame();
+  strcpy(oppnName_, "web-peer");
+  if(commMgr_->startGame(peer_, oppnName_)) {
+    sock_->removeCB(SOCKET_CB_READ);
+    return;
+  }
+  delete peer_;
+  peer_ = 0;
+  busy_ = 0;
+  return;
+#endif
+
   char opponentName[32];
   BTPlayer *player = 0;
 
@@ -383,6 +415,13 @@ void BTNetManager::challengeComputer(int avail)
 
 void BTNetManager::recordStats(int won, BTGameStats *stats)
 {
+#ifdef __EMSCRIPTEN__
+  (void)won;
+  (void)stats;
+  return;
+#endif
+  if (g_resources.no_server)
+    return;
   // If the same user account played itself from two different nodes,
   // then don\'t bother recording any results
 
@@ -573,6 +612,12 @@ void BTNetManager::challengeCB(unsigned long *)
 
 int BTNetManager::verifyEntry(BTNetworkEntry *entry)
 {
+#ifdef __EMSCRIPTEN__
+  (void)entry;
+  return 1;
+#endif
+  if (g_resources.no_server)
+    return 0;
   unsigned short valid;
   short err;
 
@@ -615,6 +660,11 @@ int BTNetManager::verifyEntry(BTNetworkEntry *entry)
 
 void BTNetManager::changeStatus()
 {
+#ifdef __EMSCRIPTEN__
+  return;
+#endif
+  if (g_resources.no_server)
+    return;
   short err;
 
   if((err = dbuf_.sendpacket(BT_QUER_UPDATE)) < 0) {
@@ -638,6 +688,30 @@ BTNetworkEntry *BTNetManager::netentry(int index)
 
 void BTNetManager::netupdate()
 {
+#ifdef __EMSCRIPTEN__
+  int i2;
+  if(netdata_ != 0) {
+    for(i2 = 0; i2 < netlen_; i2++) delete netdata_[i2];
+    delete [] netdata_;
+    netdata_ = 0;
+  }
+  if(netbuf_ != 0) {
+    for(i2 = 0; i2 < netlen_; i2++) delete [] netbuf_[i2];
+    delete [] netbuf_;
+    netbuf_ = 0;
+  }
+  netlen_ = 1;
+  netdata_ = new BTNetworkEntry * [1];
+  netbuf_ = new char * [1];
+  netbuf_[0] = new char [BTNETMGR_NETENTRYLEN];
+  InetAddress fakeAddr;
+  netdata_[0] = new BTNetworkEntry((char *)"web-peer", (char *)"browser", fakeAddr);
+  netdata_[0]->status_ = BTSTATUS_WAITING;
+  BTNetManager::formatNetworkEntry(0);
+  return;
+#endif
+  if (g_resources.no_server)
+    return;
   char *bufptr;
   short err;
   int i;
@@ -757,6 +831,11 @@ BTPlayer *BTNetManager::plyentry(char *name)
 
 void BTNetManager::plyupdate()
 {
+#ifdef __EMSCRIPTEN__
+  return;
+#endif
+  if (g_resources.no_server)
+    return;
   char *bufptr;
   short err;
   int i;

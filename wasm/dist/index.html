@@ -3,31 +3,746 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BattleTris full wasm</title>
+  <title>BattleTris WASM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <canvas id="screen" width="720" height="760"></canvas>
-    <aside>
-      <h1>BattleTris</h1>
-      <p>Full original binary path, wasm X/Motif shim.</p>
-    </aside>
-  </main>
+  <div class="terminal-container">
+    <header class="game-header">
+      <div class="glow-title">BATTLETRIS</div>
+      <div class="header-status">WASM RUNTIME ACTIVATED</div>
+    </header>
+    
+    <main>
+      <div class="canvas-wrapper">
+        <canvas id="screen" width="800" height="800"></canvas>
+        <div class="scanlines"></div>
+      </div>
+      
+      <aside class="sidebar">
+        <div class="card font-outfit">
+          <h3>CONTROLS</h3>
+          <ul class="control-list">
+            <li><span class="key">J</span> Move Left</li>
+            <li><span class="key">L</span> Move Right</li>
+            <li><span class="key">K</span> Rotate Piece</li>
+            <li><span class="key">SPACE</span> Drop Piece</li>
+            <li><span class="key">P</span> Pause Game</li>
+            <li><span class="key">C</span> Condor (Weapon)</li>
+          </ul>
+        </div>
+        
+        <div class="card font-outfit">
+          <h3>SYSTEM STATS</h3>
+          <div class="stats-grid">
+            <div>Frame rate:</div><div class="neon-text">60 FPS</div>
+            <div>Mode:</div><div id="mode-text" class="neon-text">Offline AI (-X)</div>
+            <div>Audio:</div><div class="neon-text">Disabled</div>
+            <div>Draw count:</div><div id="draw-count" class="neon-text">0</div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
   <script>
+    var widgets = {};
+    var drawables = {};
+    var rootWidgets = [];
+    var hoverWidget = null;
+    var draggingWidget = null;
+    var btStats = { fills: 0, copies: 0, lastCopies: [] };
+    var flushPending = false;
+    var lastTick = performance.now();
+    var heldKeys = {};
+    var lastKeyAt = {};
+    var btPhase = "boot";
+    window.btWidgets = widgets;
+    window.btDrawables = drawables;
+    window.btStats = btStats;
+
+    // Helper: round rect for Canvas
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      this.beginPath();
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+
+    function getOrCreateDrawable(id) {
+      if (drawables[id]) return drawables[id];
+      const w = widgets[id];
+      if (w) {
+        const width = w.computedWidth || w.width || 100;
+        const height = w.computedHeight || w.height || 100;
+        Module.createDrawable(id, width, height);
+        return drawables[id];
+      }
+      Module.createDrawable(id, 100, 100);
+      return drawables[id];
+    }
+
+    var q = new URLSearchParams(location.search);
+    var mp = q.get("mp") === "1";
+    var wsUrl = q.get("ws") || "";
+    if (mp) document.getElementById("mode-text").innerText = "Multiplayer WebSocket";
     var Module = {
       canvas: document.getElementById("screen"),
+      arguments: mp ? [] : ["-X"],
+      btWsUrl: wsUrl,
       preRun: [],
       postRun: [],
       drawCount: 0,
-      btFillRect(x, y, w, h) {
-        const ctx = Module.canvas.getContext("2d");
-        ctx.fillStyle = "#e6d21d";
-        ctx.fillRect(x, y, w, h);
-        Module.drawCount++;
+
+      btPhase(text) {
+        btPhase = text;
       },
-      btFlush() {}
+
+      createDrawable(id, w, h) {
+        if (!drawables[id]) {
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, w, h);
+          drawables[id] = { canvas, ctx, width: w, height: h };
+        } else {
+          // Resize existing drawable
+          const d = drawables[id];
+          if (d.width !== w || d.height !== h) {
+            d.canvas.width = w;
+            d.canvas.height = h;
+            d.width = w;
+            d.height = h;
+          }
+        }
+      },
+
+      destroyDrawable(id) {
+        delete drawables[id];
+      },
+
+      fillRectangle(destId, color, x, y, w, h) {
+        btStats.fills++;
+        const dest = getOrCreateDrawable(destId);
+        if (!dest) return;
+        dest.ctx.fillStyle = "#" + color.toString(16).padStart(6, '0');
+        dest.ctx.fillRect(x, y, w, h);
+      },
+
+      fillArc(destId, color, x, y, w, h, angle1, angle2) {
+        const dest = getOrCreateDrawable(destId);
+        if (!dest) return;
+        const ctx = dest.ctx;
+        ctx.fillStyle = "#" + color.toString(16).padStart(6, '0');
+        ctx.beginPath();
+        // X11 angles are in 1/64ths of a degree, counterclockwise.
+        const a1 = (angle1 / 64) * Math.PI / 180;
+        const a2 = ((angle1 + angle2) / 64) * Math.PI / 180;
+        ctx.arc(x + w / 2, y + h / 2, w / 2, a1, a2);
+        ctx.fill();
+      },
+
+      drawArc(destId, color, x, y, w, h, angle1, angle2) {
+        const dest = getOrCreateDrawable(destId);
+        if (!dest) return;
+        const ctx = dest.ctx;
+        ctx.strokeStyle = "#" + color.toString(16).padStart(6, '0');
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const a1 = (angle1 / 64) * Math.PI / 180;
+        const a2 = ((angle1 + angle2) / 64) * Math.PI / 180;
+        ctx.arc(x + w / 2, y + h / 2, w / 2, a1, a2);
+        ctx.stroke();
+      },
+
+      copyArea(srcId, destId, srcX, srcY, w, h, destX, destY) {
+        btStats.copies++;
+        btStats.lastCopies.push({srcId, destId, srcX, srcY, w, h, destX, destY});
+        if (btStats.lastCopies.length > 20) btStats.lastCopies.shift();
+        const src = getOrCreateDrawable(srcId);
+        const dest = getOrCreateDrawable(destId);
+        if (!src || !dest) return;
+        dest.ctx.drawImage(src.canvas, srcX, srcY, w, h, destX, destY, w, h);
+      },
+
+      putImage(destId, dataPtr, width, height, srcX, srcY, destX, destY) {
+        const dest = getOrCreateDrawable(destId);
+        if (!dest) return;
+        const ctx = dest.ctx;
+        const imgData = ctx.createImageData(width, height);
+        const data = imgData.data;
+
+        // Read pixels from HEAPU32
+        const pixelCount = width * height;
+        const src = new Uint32Array(Module.HEAPU32.buffer, dataPtr, pixelCount);
+
+        for (let i = 0; i < pixelCount; i++) {
+          const val = src[i];
+          const r = (val >> 16) & 0xff;
+          const g = (val >> 8) & 0xff;
+          const b = val & 0xff;
+          data[i * 4 + 0] = r;
+          data[i * 4 + 1] = g;
+          data[i * 4 + 2] = b;
+          data[i * 4 + 3] = 255;
+        }
+
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        tempCanvas.getContext("2d").putImageData(imgData, 0, 0);
+
+        ctx.drawImage(tempCanvas, srcX, srcY, width, height, destX, destY, width, height);
+      },
+
+      createWidget(id, name, className, parentId) {
+        widgets[id] = {
+          id, name, className, parentId,
+          children: [],
+          x: 0, y: 0, width: 100, height: 40,
+          left_attachment: 4, right_attachment: 4, top_attachment: 4, bottom_attachment: 4,
+          left_position: 0, right_position: 0, top_position: 0, bottom_position: 0,
+          left_offset: 0, right_offset: 0, top_offset: 0, bottom_offset: 0,
+          left_widget: 0, right_widget: 0, top_widget: 0, bottom_widget: 0,
+          fraction_base: 100,
+          label: null,
+          set: 0, slider_value: 0, minimum: 0, maximum: 100,
+          managed: false, mapped: true,
+          computedX: 0, computedY: 0, computedWidth: 100, computedHeight: 40
+        };
+
+        if (parentId && widgets[parentId]) {
+          widgets[parentId].children.push(widgets[id]);
+        } else {
+          rootWidgets.push(widgets[id]);
+        }
+      },
+
+      updateWidget(id, props) {
+        const w = widgets[id];
+        if (!w) return;
+        Object.assign(w, props);
+        if (w.className === "drawing") {
+          Module.createDrawable(id, w.width || 1, w.height || 1);
+        }
+        
+        // Raise managed widgets to the end of parent children array to simulate X11 window raising
+        if (w.managed) {
+          if (w.parentId && widgets[w.parentId]) {
+            const siblings = widgets[w.parentId].children;
+            const idx = siblings.indexOf(w);
+            if (idx !== -1) {
+              siblings.splice(idx, 1);
+              siblings.push(w);
+            }
+          } else {
+            const idx = rootWidgets.indexOf(w);
+            if (idx !== -1) {
+              rootWidgets.splice(idx, 1);
+              rootWidgets.push(w);
+            }
+          }
+        }
+        
+        // Dynamically adjust screen canvas dimensions to match shell root size
+        if (w.parentId === 0) {
+          if (Module.canvas.width !== w.width || Module.canvas.height !== w.height) {
+            Module.canvas.width = w.width;
+            Module.canvas.height = w.height;
+          }
+        }
+        solveAllLayouts();
+      },
+
+      destroyWidget(id) {
+        const w = widgets[id];
+        if (!w) return;
+        if (w.parentId && widgets[w.parentId]) {
+          widgets[w.parentId].children = widgets[w.parentId].children.filter(c => c.id !== id);
+        } else {
+          rootWidgets = rootWidgets.filter(c => c.id !== id);
+        }
+        delete widgets[id];
+        solveAllLayouts();
+      },
+
+      btFlush() {
+        lastTick = performance.now();
+        if (flushPending) return;
+        flushPending = true;
+        requestAnimationFrame(() => {
+          flushPending = false;
+          Module.drawCount++;
+          document.getElementById("draw-count").innerText = Module.drawCount;
+          Module.btPaint();
+        });
+      },
+
+      btPaint() {
+        const mainCtx = Module.canvas.getContext("2d");
+        mainCtx.fillStyle = "#121619";
+        mainCtx.fillRect(0, 0, Module.canvas.width, Module.canvas.height);
+
+        rootWidgets.forEach(w => {
+          if (w.managed || w.parentId === 0) {
+            drawWidget(mainCtx, w, 0, 0);
+          }
+        });
+      }
     };
+    window.btModule = Module;
+    setInterval(() => {
+      const el = document.getElementById("draw-count");
+      if (el) el.innerText = Module.drawCount + " / " + Math.round(performance.now() - lastTick) + "ms / " + btPhase;
+    }, 500);
+
+    // Attachments values mapping
+    const XmATTACH_POSITION = 1;
+    const XmATTACH_FORM = 2;
+    const XmATTACH_WIDGET = 3;
+
+    function solveAllLayouts() {
+      rootWidgets.forEach(w => {
+        w.computedX = 0;
+        w.computedY = 0;
+        w.computedWidth = w.width;
+        w.computedHeight = w.height;
+        solveChildrenLayouts(w);
+      });
+    }
+
+    function solveChildrenLayouts(parent) {
+      if (!parent.children || parent.children.length === 0) return;
+
+      const children = parent.children.filter(c => c.managed);
+
+      // Perform a multi-pass layout solver to resolve widget-to-widget dependencies
+      for (let pass = 0; pass < 4; pass++) {
+        children.forEach(c => {
+          let left = null, right = null, top = null, bottom = null;
+
+          // Left
+          if (c.left_attachment === XmATTACH_POSITION) {
+            left = (c.left_position / parent.fraction_base) * parent.computedWidth;
+          } else if (c.left_attachment === XmATTACH_FORM) {
+            left = c.left_offset;
+          } else if (c.left_attachment === XmATTACH_WIDGET && c.left_widget && widgets[c.left_widget]) {
+            const lw = widgets[c.left_widget];
+            left = lw.computedX + lw.computedWidth + c.left_offset;
+          }
+
+          // Right
+          if (c.right_attachment === XmATTACH_POSITION) {
+            right = (c.right_position / parent.fraction_base) * parent.computedWidth;
+          } else if (c.right_attachment === XmATTACH_FORM) {
+            right = parent.computedWidth - c.right_offset;
+          } else if (c.right_attachment === XmATTACH_WIDGET && c.right_widget && widgets[c.right_widget]) {
+            const rw = widgets[c.right_widget];
+            right = rw.computedX - c.right_offset;
+          }
+
+          // Top
+          if (c.top_attachment === XmATTACH_POSITION) {
+            top = (c.top_position / parent.fraction_base) * parent.computedHeight;
+          } else if (c.top_attachment === XmATTACH_FORM) {
+            top = c.top_offset;
+          } else if (c.top_attachment === XmATTACH_WIDGET && c.top_widget && widgets[c.top_widget]) {
+            const tw = widgets[c.top_widget];
+            top = tw.computedY + tw.computedHeight + c.top_offset;
+          }
+
+          // Bottom
+          if (c.bottom_attachment === XmATTACH_POSITION) {
+            bottom = (c.bottom_position / parent.fraction_base) * parent.computedHeight;
+          } else if (c.bottom_attachment === XmATTACH_FORM) {
+            bottom = parent.computedHeight - c.bottom_offset;
+          } else if (c.bottom_attachment === XmATTACH_WIDGET && c.bottom_widget && widgets[c.bottom_widget]) {
+            const bw = widgets[c.bottom_widget];
+            bottom = bw.computedY - c.bottom_offset;
+          }
+
+          // Size bounds
+          if (left !== null && right !== null) {
+            c.computedX = left;
+            c.computedWidth = right - left;
+          } else if (left !== null) {
+            c.computedX = left;
+            c.computedWidth = c.width;
+          } else if (right !== null) {
+            c.computedX = right - c.width;
+            c.computedWidth = c.width;
+          } else {
+            c.computedX = c.x;
+            c.computedWidth = c.width;
+          }
+
+          if (top !== null && bottom !== null) {
+            c.computedY = top;
+            c.computedHeight = bottom - top;
+          } else if (top !== null) {
+            c.computedY = top;
+            c.computedHeight = c.height;
+          } else if (bottom !== null) {
+            c.computedY = bottom - c.height;
+            c.computedHeight = c.height;
+          } else {
+            c.computedY = c.y;
+            c.computedHeight = c.height;
+          }
+
+          if (parent.className === "frame") {
+            if (c.className !== "label") {
+              const hasTitle = parent.children.some(child => child.managed && child.className === "label");
+              const topMargin = hasTitle ? 18 : 4;
+              c.computedX = 4;
+              c.computedY = topMargin;
+              c.computedWidth = parent.computedWidth - 8;
+              c.computedHeight = parent.computedHeight - (topMargin + 4);
+            }
+          }
+        });
+      }
+
+      // Recurse children
+      children.forEach(c => solveChildrenLayouts(c));
+    }
+
+    function drawWidget(ctx, w, offsetX, offsetY) {
+      if (!w.mapped) return;
+
+      const x = offsetX + w.computedX;
+      const y = offsetY + w.computedY;
+      const width = w.computedWidth;
+      const height = w.computedHeight;
+
+      if (w.className === "form") {
+        // Draw form panel background
+        ctx.fillStyle = "#1e2226";
+        ctx.fillRect(x, y, width, height);
+
+        // Subtly border panel
+        ctx.strokeStyle = "#384551";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, width, height);
+      }
+      else if (w.className === "push") {
+        const isHover = (hoverWidget === w);
+        const isActive = (draggingWidget === w);
+
+        // Button background gradient
+        const grad = ctx.createLinearGradient(x, y, x, y + height);
+        if (isActive) {
+          grad.addColorStop(0, "#101316");
+          grad.addColorStop(1, "#1c2125");
+        } else if (isHover) {
+          grad.addColorStop(0, "#3e4852");
+          grad.addColorStop(1, "#272e35");
+        } else {
+          grad.addColorStop(0, "#2c343a");
+          grad.addColorStop(1, "#1c2125");
+        }
+
+        ctx.fillStyle = grad;
+        ctx.roundRect(x, y, width, height, 4).fill();
+
+        // Neon gold border for hover
+        ctx.strokeStyle = isHover ? "#e6d21d" : "#4a5764";
+        ctx.lineWidth = isHover ? 2 : 1;
+        ctx.roundRect(x, y, width, height, 4).stroke();
+
+        // Button Text
+        if (w.label) {
+          ctx.font = "600 15px 'Outfit', sans-serif";
+          ctx.fillStyle = isHover ? "#ffffff" : "#f3ead3";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          // If active, shift text slightly
+          const textY = isActive ? y + height / 2 + 1 : y + height / 2;
+          ctx.fillText(w.label, x + width / 2, textY);
+        }
+      }
+      else if (w.className === "label") {
+        if (w.label) {
+          ctx.font = "600 16px 'Outfit', sans-serif";
+          ctx.fillStyle = "#f3ead3";
+          ctx.textBaseline = "top";
+          
+          // Compute alignments
+          const aligns = w.name.includes("title") || w.name.includes("head") ? "center" : "left";
+          ctx.textAlign = aligns;
+
+          const lines = w.label.split("\n");
+          let currentY = y;
+          lines.forEach(line => {
+            const textX = (aligns === "center") ? x + width / 2 : x;
+            ctx.fillText(line, textX, currentY);
+            currentY += 20;
+          });
+        }
+      }
+      else if (w.className === "drawing") {
+        // Draw the backing canvas directly onto the screen
+        const d = drawables[w.id];
+        if (d) {
+          ctx.drawImage(d.canvas, x, y, d.width, d.height);
+        } else {
+          // Placeholder
+          ctx.fillStyle = "#0c0e10";
+          ctx.fillRect(x, y, w.width, w.height);
+        }
+      }
+      else if (w.className === "frame") {
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, width, height);
+      }
+      else if (w.className === "toggle") {
+        // Draw standard checkbox
+        ctx.fillStyle = "#1e2226";
+        ctx.fillRect(x, y + height / 2 - 8, 16, 16);
+        ctx.strokeStyle = "#ffd700";
+        ctx.strokeRect(x, y + height / 2 - 8, 16, 16);
+
+        if (w.set) {
+          ctx.fillStyle = "#ffd700";
+          ctx.fillRect(x + 4, y + height / 2 - 4, 8, 8);
+        }
+
+        if (w.label) {
+          ctx.font = "14px 'Outfit', sans-serif";
+          ctx.fillStyle = "#f3ead3";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(w.label, x + 24, y + height / 2);
+        }
+      }
+      else if (w.className === "scale") {
+        // Draw slider bar
+        ctx.fillStyle = "#101215";
+        ctx.fillRect(x, y + height / 2 - 4, width, 8);
+        ctx.strokeStyle = "#2f3840";
+        ctx.strokeRect(x, y + height / 2 - 4, width, 8);
+
+        // Slider Handle
+        const pct = (w.slider_value - w.minimum) / (w.maximum - w.minimum);
+        const handleX = x + pct * (width - 16);
+        
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(handleX, y + height / 2 - 10, 16, 20);
+        ctx.strokeStyle = "#ffffff";
+        ctx.strokeRect(handleX, y + height / 2 - 10, 16, 20);
+      }
+      else if (w.className === "list" || w.className === "text") {
+        // Render simple select lists or text areas
+        ctx.fillStyle = "#0c0e10";
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = "#384551";
+        ctx.strokeRect(x, y, width, height);
+
+        if (w.label) {
+          ctx.font = "14px monospace";
+          ctx.fillStyle = "#55d5ff";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          
+          const lines = w.label.split("\n");
+          let currentY = y + 4;
+          lines.forEach((line, idx) => {
+            // Highlighting list index (slider_value) if it matches selection
+            const isSelected = (w.className === "list" && idx + 1 === w.slider_value);
+            if (isSelected) {
+              ctx.fillStyle = "#ffd700";
+              ctx.fillRect(x + 2, currentY - 1, width - 4, 18);
+              ctx.fillStyle = "#000000";
+            } else {
+              ctx.fillStyle = "#55d5ff";
+            }
+            ctx.fillText(line, x + 6, currentY);
+            currentY += 18;
+          });
+        }
+      }
+
+      // Draw children recursively
+      if (w.children && w.children.length > 0) {
+        w.children.forEach(c => {
+          if (c.managed) {
+            drawWidget(ctx, c, x, y);
+          }
+        });
+      }
+    }
+
+    // Interactive Hit Test
+    function findWidgetAt(x, y) {
+      let found = null;
+
+      function check(w, ox, oy) {
+        if (!w.mapped) return;
+        const wx = ox + w.computedX;
+        const wy = oy + w.computedY;
+        const ww = w.computedWidth;
+        const wh = w.computedHeight;
+
+        if (x >= wx && x <= wx + ww && y >= wy && y <= wy + wh) {
+          if (w.managed || w.parentId === 0) {
+            found = w;
+          }
+        }
+        if (w.children) {
+          w.children.forEach(c => check(c, wx, wy));
+        }
+      }
+
+      rootWidgets.forEach(w => check(w, 0, 0));
+      return found;
+    }
+
+    // Get absolute screen offsets of a widget
+    function getAbsolutePosition(w) {
+      let ox = w.computedX;
+      let oy = w.computedY;
+      let pid = w.parentId;
+      while (pid && widgets[pid]) {
+        const p = widgets[pid];
+        ox += p.computedX;
+        oy += p.computedY;
+        pid = p.parentId;
+      }
+      return { x: ox, y: oy };
+    }
+
+    // Capturing canvas interactions
+    Module.canvas.addEventListener("mousemove", e => {
+      const rect = Module.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (draggingWidget && draggingWidget.className === "scale") {
+        // Dragging slider scale widget
+        const pos = getAbsolutePosition(draggingWidget);
+        const relativeX = x - pos.x;
+        const pct = Math.max(0, Math.min(1, relativeX / draggingWidget.computedWidth));
+        const val = Math.round(draggingWidget.minimum + pct * (draggingWidget.maximum - draggingWidget.minimum));
+        Module._bt_wasm_scale_changed(draggingWidget.id, val);
+        Module.btFlush();
+        return;
+      }
+
+      const w = findWidgetAt(x, y);
+      if (w !== hoverWidget) {
+        hoverWidget = w;
+        Module.btFlush();
+      }
+    });
+
+    Module.canvas.addEventListener("mousedown", e => {
+      const rect = Module.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const w = findWidgetAt(x, y);
+      if (w) {
+        draggingWidget = w;
+        if (w.className === "push") {
+          Module.btFlush();
+        }
+        else if (w.className === "toggle") {
+          Module._bt_wasm_toggle_changed(w.id, w.set ? 0 : 1);
+          Module.btFlush();
+        }
+        else if (w.className === "scale") {
+          const pos = getAbsolutePosition(w);
+          const relativeX = x - pos.x;
+          const pct = Math.max(0, Math.min(1, relativeX / w.computedWidth));
+          const val = Math.round(w.minimum + pct * (w.maximum - w.minimum));
+          Module._bt_wasm_scale_changed(w.id, val);
+          Module.btFlush();
+        }
+        else if (w.className === "list") {
+          // List item selection hit-test
+          const pos = getAbsolutePosition(w);
+          const relativeY = y - pos.y;
+          const idx = Math.floor(relativeY / 18);
+          if (w.label) {
+            const lines = w.label.split("\n");
+            if (idx >= 0 && idx < lines.length) {
+              const item = lines[idx];
+              // Call C++ activation handler for scrolled list selection
+              const ptr = Module._malloc(item.length + 1);
+              stringToUTF8(item, ptr, item.length + 1);
+              Module._bt_wasm_list_selected(w.id, ptr, idx + 1);
+              Module._free(ptr);
+              Module.btFlush();
+            }
+          }
+        }
+        else if (w.className === "drawing") {
+          const pos = getAbsolutePosition(w);
+          const relativeX = x - pos.x;
+          const relativeY = y - pos.y;
+          // Trigger mouse click down
+          Module._bt_wasm_input_event(w.id, 4, relativeX, relativeY); // ButtonPress (4)
+        }
+      }
+    });
+
+    window.addEventListener("mouseup", e => {
+      if (draggingWidget) {
+        if (draggingWidget.className === "push") {
+          // Trigger C++ click activate handler on release
+          Module._bt_wasm_activate(draggingWidget.id);
+        }
+        else if (draggingWidget.className === "drawing") {
+          const rect = Module.canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const pos = getAbsolutePosition(draggingWidget);
+          const relativeX = x - pos.x;
+          const relativeY = y - pos.y;
+          // Trigger mouse click release
+          Module._bt_wasm_input_event(draggingWidget.id, 5, relativeX, relativeY); // ButtonRelease (5)
+        }
+        draggingWidget = null;
+        Module.btFlush();
+      }
+    });
+
+    window.btPress = key => {
+      if (key && key.length === 1 && Module._bt_wasm_keypress_any) {
+        Module._bt_wasm_keypress_any(key.charCodeAt(0));
+      }
+    };
+
+    window.addEventListener("keydown", e => {
+      let key = e.key;
+      if (key === "Space") key = " ";
+      if (key.length === 1) {
+        const now = performance.now();
+        const minGap = key === " " ? 90 : 35;
+        if (heldKeys[key] && now - (lastKeyAt[key] || 0) < minGap) return;
+        heldKeys[key] = true;
+        lastKeyAt[key] = now;
+        window.btPress(key);
+      }
+    });
+
+    window.addEventListener("keyup", e => {
+      let key = e.key;
+      if (key === "Space") key = " ";
+      if (key.length === 1) heldKeys[key] = false;
+    });
   </script>
   <script src="battletris-full.js"></script>
 </body>

@@ -71,7 +71,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /tmp/tmpwgldd458.js
+// include: /tmp/tmp63cvth_l.js
 
   if (!Module['expectedDataFileDownloads']) Module['expectedDataFileDownloads'] = 0;
   Module['expectedDataFileDownloads']++;
@@ -208,21 +208,21 @@ Module['FS_createPath']("/usr/src/share", "sounds", true, true);
 
   })();
 
-// end include: /tmp/tmpwgldd458.js
-// include: /tmp/tmptkeev6it.js
+// end include: /tmp/tmp63cvth_l.js
+// include: /tmp/tmp3026qs3k.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /tmp/tmptkeev6it.js
-// include: /tmp/tmph1bahfb_.js
+  // end include: /tmp/tmp3026qs3k.js
+// include: /tmp/tmp01y9i684.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /tmp/tmph1bahfb_.js
+  // end include: /tmp/tmp01y9i684.js
 
 
 var arguments_ = [];
@@ -617,7 +617,7 @@ function updateMemoryViews() {
   HEAPU8 = new Uint8Array(b);
   HEAPU16 = new Uint16Array(b);
   HEAP32 = new Int32Array(b);
-  HEAPU32 = new Uint32Array(b);
+  Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
   HEAPF32 = new Float32Array(b);
   HEAPF64 = new Float64Array(b);
   HEAP64 = new BigInt64Array(b);
@@ -4529,162 +4529,6 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   }
   
 
-  
-  var inetNtop4 = (addr) =>
-      (addr & 0xff) + '.' + ((addr >> 8) & 0xff) + '.' + ((addr >> 16) & 0xff) + '.' + ((addr >> 24) & 0xff);
-  
-  
-  var inetNtop6 = (ints) => {
-      //  ref:  http://www.ietf.org/rfc/rfc2373.txt - section 2.5.4
-      //  Format for IPv4 compatible and mapped  128-bit IPv6 Addresses
-      //  128-bits are split into eight 16-bit words
-      //  stored in network byte order (big-endian)
-      //  |                80 bits               | 16 |      32 bits        |
-      //  +-----------------------------------------------------------------+
-      //  |               10 bytes               |  2 |      4 bytes        |
-      //  +--------------------------------------+--------------------------+
-      //  +               5 words                |  1 |      2 words        |
-      //  +--------------------------------------+--------------------------+
-      //  |0000..............................0000|0000|    IPv4 ADDRESS     | (compatible)
-      //  +--------------------------------------+----+---------------------+
-      //  |0000..............................0000|FFFF|    IPv4 ADDRESS     | (mapped)
-      //  +--------------------------------------+----+---------------------+
-      var str = "";
-      var word = 0;
-      var longest = 0;
-      var lastzero = 0;
-      var zstart = 0;
-      var len = 0;
-      var i = 0;
-      var parts = [
-        ints[0] & 0xffff,
-        (ints[0] >> 16),
-        ints[1] & 0xffff,
-        (ints[1] >> 16),
-        ints[2] & 0xffff,
-        (ints[2] >> 16),
-        ints[3] & 0xffff,
-        (ints[3] >> 16)
-      ];
-  
-      // Handle IPv4-compatible, IPv4-mapped, loopback and any/unspecified addresses
-  
-      var hasipv4 = true;
-      var v4part = "";
-      // check if the 10 high-order bytes are all zeros (first 5 words)
-      for (i = 0; i < 5; i++) {
-        if (parts[i] !== 0) { hasipv4 = false; break; }
-      }
-  
-      if (hasipv4) {
-        // low-order 32-bits store an IPv4 address (bytes 13 to 16) (last 2 words)
-        v4part = inetNtop4(parts[6] | (parts[7] << 16));
-        // IPv4-mapped IPv6 address if 16-bit value (bytes 11 and 12) == 0xFFFF (6th word)
-        if (parts[5] === -1) {
-          str = "::ffff:";
-          str += v4part;
-          return str;
-        }
-        // IPv4-compatible IPv6 address if 16-bit value (bytes 11 and 12) == 0x0000 (6th word)
-        if (parts[5] === 0) {
-          str = "::";
-          // special case IPv6 addresses
-          if (v4part === "0.0.0.0") v4part = ""; // any/unspecified address
-          if (v4part === "0.0.0.1") v4part = "1";// loopback address
-          str += v4part;
-          return str;
-        }
-      }
-  
-      // Handle all other IPv6 addresses
-  
-      // first run to find the longest contiguous zero words
-      for (word = 0; word < 8; word++) {
-        if (parts[word] === 0) {
-          if (word - lastzero > 1) {
-            len = 0;
-          }
-          lastzero = word;
-          len++;
-        }
-        if (len > longest) {
-          longest = len;
-          zstart = word - longest + 1;
-        }
-      }
-  
-      for (word = 0; word < 8; word++) {
-        if (longest > 1) {
-          // compress contiguous zeros - to produce "::"
-          if (parts[word] === 0 && word >= zstart && word < (zstart + longest) ) {
-            if (word === zstart) {
-              str += ":";
-              if (zstart === 0) str += ":"; //leading zeros case
-            }
-            continue;
-          }
-        }
-        // converts 16-bit words from big-endian to little-endian before converting to hex string
-        str += Number(_ntohs(parts[word] & 0xffff)).toString(16);
-        str += word < 7 ? ":" : "";
-      }
-      return str;
-    };
-  
-  var readSockaddr = (sa, salen) => {
-      // family / port offsets are common to both sockaddr_in and sockaddr_in6
-      var family = HEAP16[((sa)>>1)];
-      var port = _ntohs(HEAPU16[(((sa)+(2))>>1)]);
-      var addr;
-  
-      switch (family) {
-        case 2:
-          if (salen !== 16) {
-            return { errno: 28 };
-          }
-          addr = HEAP32[(((sa)+(4))>>2)];
-          addr = inetNtop4(addr);
-          break;
-        case 10:
-          if (salen !== 28) {
-            return { errno: 28 };
-          }
-          addr = [
-            HEAP32[(((sa)+(8))>>2)],
-            HEAP32[(((sa)+(12))>>2)],
-            HEAP32[(((sa)+(16))>>2)],
-            HEAP32[(((sa)+(20))>>2)]
-          ];
-          addr = inetNtop6(addr);
-          break;
-        default:
-          return { errno: 5 };
-      }
-  
-      return { family: family, addr: addr, port: port };
-    };
-  
-  
-  var getSocketAddress = (addrp, addrlen) => {
-      var info = readSockaddr(addrp, addrlen);
-      if (info.errno) throw new FS.ErrnoError(info.errno);
-      info.addr = DNS.lookup_addr(info.addr) || info.addr;
-      return info;
-    };
-  function ___syscall_connect(fd, addr, addrlen, d1, d2, d3) {
-  try {
-  
-      var sock = getSocketFromFD(fd);
-      var info = getSocketAddress(addr, addrlen);
-      sock.sock_ops.connect(sock, info.addr, info.port);
-      return 0;
-    } catch (e) {
-    if (typeof FS == 'undefined' || !(e.name === 'ErrnoError')) throw e;
-    return -e.errno;
-  }
-  }
-  
-
   var syscallGetVarargI = () => {
       assert(SYSCALLS.varargs != undefined);
       // the `+` prepended here is necessary to convince the JSCompiler that varargs is indeed a number.
@@ -5352,147 +5196,6 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   }
   
 
-  var ___syscall_poll = function(fds, nfds, timeout) {
-    let innerFunc =  () => {
-  
-  try {
-  
-      const isAsyncContext = true;
-      // Enable event handlers only when the poll call is proxied from a worker.
-      // TODO: Could use `Promise.withResolvers` here if we know its available.
-      var resolve;
-      var promise = new Promise((resolve_) => { resolve = resolve_; });
-      var cleanupFuncs = [];
-      var notifyDone = false;
-      function asyncPollComplete(count) {
-        if (notifyDone) {
-          return;
-        }
-        notifyDone = true;
-        cleanupFuncs.forEach(cb => cb());
-        resolve(count);
-      }
-      function makeNotifyCallback(stream, pollfd) {
-        var cb = (flags) => {
-          if (notifyDone) {
-            return;
-          }
-          var events = HEAP16[(((pollfd)+(4))>>1)];
-          flags &= events | 8 | 16;
-          assert(flags)
-          HEAP16[(((pollfd)+(6))>>1)] = flags;
-          asyncPollComplete(1);
-        }
-        cb.registerCleanupFunc = (f) => {
-          if (f) cleanupFuncs.push(f);
-        }
-        return cb;
-      }
-  
-      if (isAsyncContext) {
-        if (timeout > 0) {
-          var t = setTimeout(() => {
-            asyncPollComplete(0);
-          }, timeout);
-          cleanupFuncs.push(() => clearTimeout(t));
-        }
-      }
-  
-      var count = 0;
-      for (var i = 0; i < nfds; i++) {
-        var pollfd = fds + 8 * i;
-        var fd = HEAP32[((pollfd)>>2)];
-        var events = HEAP16[(((pollfd)+(4))>>1)];
-        var flags = 32;
-        var stream = FS.getStream(fd);
-        if (stream) {
-          if (stream.stream_ops.poll) {
-            if (isAsyncContext && timeout) {
-              flags = stream.stream_ops.poll(stream, timeout, makeNotifyCallback(stream, pollfd));
-            } else
-            flags = stream.stream_ops.poll(stream, -1);
-          } else {
-            flags = 5;
-          }
-        }
-        flags &= events | 8 | 16;
-        if (flags) count++;
-        HEAP16[(((pollfd)+(6))>>1)] = flags;
-      }
-  
-      if (isAsyncContext) {
-        if (count || !timeout) {
-          asyncPollComplete(count);
-        }
-        return promise;
-      }
-  
-      if (!count && timeout != 0) warnOnce('non-zero poll() timeout not supported: ' + timeout)
-      return count;
-    } catch (e) {
-    if (typeof FS == 'undefined' || !(e.name === 'ErrnoError')) throw e;
-    return -e.errno;
-  }
-  
-  };
-    return Asyncify.handleAsync(innerFunc);
-  }
-  ;
-  ___syscall_poll.isAsync = true;
-
-  
-  
-  function ___syscall_recvfrom(fd, buf, len, flags, addr, addrlen) {
-  try {
-  
-      var sock = getSocketFromFD(fd);
-      var msg = sock.sock_ops.recvmsg(sock, len);
-      if (!msg) return 0; // socket is closed
-      if (addr) {
-        var errno = writeSockaddr(addr, sock.family, DNS.lookup_name(msg.addr), msg.port, addrlen);
-        assert(!errno);
-      }
-      HEAPU8.set(msg.buffer, buf);
-      return msg.buffer.byteLength;
-    } catch (e) {
-    if (typeof FS == 'undefined' || !(e.name === 'ErrnoError')) throw e;
-    return -e.errno;
-  }
-  }
-  
-
-  
-  function ___syscall_sendto(fd, message, length, flags, addr, addr_len) {
-  try {
-  
-      var sock = getSocketFromFD(fd);
-      if (!addr) {
-        // send, no address provided
-        return FS.write(sock.stream, HEAP8, message, length);
-      }
-      var dest = getSocketAddress(addr, addr_len);
-      // sendto an address
-      return sock.sock_ops.sendmsg(sock, HEAP8, message, length, dest.addr, dest.port);
-    } catch (e) {
-    if (typeof FS == 'undefined' || !(e.name === 'ErrnoError')) throw e;
-    return -e.errno;
-  }
-  }
-  
-
-  function ___syscall_socket(domain, type, protocol) {
-  try {
-  
-      var sock = SOCKFS.createSocket(domain, type, protocol);
-      assert(sock.stream.fd < 64); // XXX ? select() assumes socket fd values are in 0..63
-      return sock.stream.fd;
-    } catch (e) {
-    if (typeof FS == 'undefined' || !(e.name === 'ErrnoError')) throw e;
-    return -e.errno;
-  }
-  }
-  
-
   function ___syscall_stat64(path, buf) {
   try {
   
@@ -5507,15 +5210,6 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
 
   var __abort_js = () =>
       abort('native code called abort()');
-
-  
-  
-  
-  var __emscripten_lookup_name = (name) => {
-      // uint32_t _emscripten_lookup_name(const char *name);
-      var nameString = UTF8ToString(name);
-      return inetPton4(DNS.lookup_name(nameString));
-    };
 
   var runtimeKeepaliveCounter = 0;
   var __emscripten_runtime_keepalive_clear = () => {
@@ -6631,6 +6325,7 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
       return (...args) => ccall(ident, returnType, argTypes, args, opts);
     };
 
+
   var FS_createPath = (...args) => FS.createPath(...args);
 
 
@@ -6722,6 +6417,9 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'getTempRet0',
   'setTempRet0',
   'withStackSave',
+  'inetNtop4',
+  'inetNtop6',
+  'readSockaddr',
   'runMainThreadEmAsm',
   'jstoi_q',
   'autoResumeAudioContext',
@@ -6814,6 +6512,7 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'ydayFromDate',
   'arraySum',
   'addDays',
+  'getSocketAddress',
   'FS_mkdirTree',
   '_setNetworkCallback',
   'heapObjectForWebGLType',
@@ -6867,7 +6566,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'HEAP16',
   'HEAPU16',
   'HEAP32',
-  'HEAPU32',
   'HEAPF32',
   'HEAPF64',
   'HEAP64',
@@ -6885,10 +6583,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'ERRNO_CODES',
   'strError',
   'inetPton4',
-  'inetNtop4',
   'inetPton6',
-  'inetNtop6',
-  'readSockaddr',
   'writeSockaddr',
   'DNS',
   'Protocols',
@@ -6967,7 +6662,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'MONTH_DAYS_LEAP_CUMULATIVE',
   'SYSCALLS',
   'getSocketFromFD',
-  'getSocketAddress',
   'preloadPlugins',
   'FS_createPreloadedFile',
   'FS_modeStringToFlags',
@@ -7120,21 +6814,51 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  108172: () => { if (Module.btFlush) Module.btFlush(); },  
- 108214: ($0, $1, $2, $3) => { if (Module.btFillRect) Module.btFillRect($0,$1,$2,$3); },  
- 108273: ($0, $1, $2, $3) => { if (Module.btFillRect) Module.btFillRect($0,$1,$2,$3); },  
- 108332: ($0, $1) => { if (Module.btFillRect) Module.btFillRect($0,$1,1,1); },  
- 108389: ($0, $1, $2, $3) => { if (Module.btFillRect) Module.btFillRect($0,$1,$2,$3); }
+  106704: ($0) => { if (Module.destroyWidget) { Module.destroyWidget($0); } },  
+ 106764: ($0, $1, $2) => { if (Module.createDrawable) Module.createDrawable($0, $1, $2); },  
+ 106830: ($0, $1, $2) => { if (Module.createDrawable) Module.createDrawable($0, $1, $2); },  
+ 106896: ($0, $1, $2) => { if (Module.createDrawable) Module.createDrawable($0, $1, $2); },  
+ 106962: ($0) => { if (Module.destroyDrawable) Module.destroyDrawable($0); },  
+ 107022: ($0) => { if (Module.destroyDrawable) Module.destroyDrawable($0); },  
+ 107082: () => { if (Module.btFlush) Module.btFlush(); },  
+ 107124: ($0, $1, $2, $3, $4, $5) => { if (Module.fillRectangle) Module.fillRectangle($0, $1, $2, $3, $4, $5); },  
+ 107200: ($0, $1, $2, $3, $4, $5, $6, $7) => { if (Module.fillArc) Module.fillArc($0, $1, $2, $3, $4, $5, $6, $7); },  
+ 107272: ($0, $1, $2, $3, $4, $5, $6, $7) => { if (Module.drawArc) Module.drawArc($0, $1, $2, $3, $4, $5, $6, $7); },  
+ 107344: ($0, $1, $2, $3) => { if (Module.fillRectangle) Module.fillRectangle($0, $1, $2, $3, 1, 1); },  
+ 107418: ($0, $1, $2, $3, $4, $5, $6, $7) => { if (Module.copyArea) Module.copyArea($0, $1, $2, $3, $4, $5, $6, $7); },  
+ 107492: ($0, $1, $2, $3, $4, $5, $6, $7) => { if (Module.putImage) Module.putImage($0, $1, $2, $3, $4, $5, $6, $7); },  
+ 107566: () => { if (Module.btPhase) Module.btPhase("key"); },  
+ 107613: () => { if (Module.btPhase) Module.btPhase("idle"); },  
+ 107661: ($0, $1, $2, $3) => { if (Module.createWidget) { Module.createWidget($0, UTF8ToString($1), UTF8ToString($2), $3); } },  
+ 107759: ($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10) => { if (Module.updateWidget) { Module.updateWidget($0, { x: $1, y: $2, width: $3, height: $4, managed: $5, mapped: $6, label: $7 ? UTF8ToString($7) : null, set: $8, slider_value: $9, hasKbdHandler: $10 }); } },  
+ 107967: ($0, $1, $2, $3, $4, $5, $6, $7, $8, $9) => { if (Module.updateWidget) { Module.updateWidget($0, { minimum: $1, maximum: $2, fraction_base: $3, left_attachment: $4, right_attachment: $5, top_attachment: $6, bottom_attachment: $7, left_position: $8, right_position: $9 }); } },  
+ 108199: ($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10) => { if (Module.updateWidget) { Module.updateWidget($0, { top_position: $1, bottom_position: $2, left_offset: $3, right_offset: $4, top_offset: $5, bottom_offset: $6, left_widget: $7, right_widget: $8, top_widget: $9, bottom_widget: $10 }); } },  
+ 108441: () => { if (Module.btPhase) Module.btPhase("timeout"); },  
+ 108492: () => { if (Module.btPhase) Module.btPhase("idle"); },  
+ 108540: ($0) => { if (Module.btPhase) Module.btPhase(UTF8ToString($0)); },  
+ 108598: ($0) => { if (Module.btPhase) Module.btPhase(UTF8ToString($0)); }
 };
+function bt_ws_connect(fd) { if (!Module.btNet) Module.btNet = { nextRoom: null, sock: {} }; if (!Module.btNet.sock[fd]) { var base = Module.btWsUrl; if (!base) { var proto = location.protocol === "https:" ? "wss://" : "ws://"; base = proto + location.hostname + ":8099"; } var room = "battletris"; try { var q = new URLSearchParams(location.search); room = q.get("room") || room; } catch (e) {} var url = base + (base.indexOf("?") >= 0 ? "&" : "?") + "room=" + encodeURIComponent(room); var s = { ws: null, q: [], open: 0, broken: 0, out: [] }; var ws = new WebSocket(url); ws.binaryType = "arraybuffer"; ws.onopen = function() { s.open = 1; for (var i = 0; i < s.out.length; i++) ws.send(s.out[i]); s.out = []; }; ws.onmessage = function(ev) { var u = new Uint8Array(ev.data); for (var i = 0; i < u.length; i++) s.q.push(u[i]); }; ws.onclose = function() { s.broken = 1; s.open = 0; }; ws.onerror = function() { s.broken = 1; }; s.ws = ws; Module.btNet.sock[fd] = s; } return 0; }
+function bt_ws_send(fd,buf,len) { var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null; if (!s || s.broken) return -1; var out = HEAPU8.slice(buf, buf + len); if (s.open) s.ws.send(out); else s.out.push(out); return len; }
+function bt_ws_avail(fd) { var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null; if (!s) return 0; return s.q.length | 0; }
+function bt_ws_packet_ready(fd) { var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null; if (!s) return 0; if (s.q.length < 8) return 0; var n = ((s.q[4] << 24) >>> 0) | ((s.q[5] << 16) >>> 0) | ((s.q[6] << 8) >>> 0) | (s.q[7] >>> 0); return s.q.length >= (8 + n) ? 1 : 0; }
+function bt_ws_broken(fd) { var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null; if (!s) return 0; return s.broken ? 1 : 0; }
+function bt_ws_recv(fd,buf,len,peek) { var s = Module.btNet && Module.btNet.sock ? Module.btNet.sock[fd] : null; if (!s) return -1; if (s.q.length < len) return 0; for (var i = 0; i < len; i++) HEAPU8[buf + i] = s.q[i]; if (!peek) s.q.splice(0, len); return len; }
 
 // Imports from the Wasm binary.
-var _free = makeInvalidEarlyAccess('_free');
-var _malloc = makeInvalidEarlyAccess('_malloc');
+var _free = Module['_free'] = makeInvalidEarlyAccess('_free');
+var _malloc = Module['_malloc'] = makeInvalidEarlyAccess('_malloc');
 var _bt_wasm_activate = Module['_bt_wasm_activate'] = makeInvalidEarlyAccess('_bt_wasm_activate');
+var _bt_wasm_scale_changed = Module['_bt_wasm_scale_changed'] = makeInvalidEarlyAccess('_bt_wasm_scale_changed');
+var _bt_wasm_toggle_changed = Module['_bt_wasm_toggle_changed'] = makeInvalidEarlyAccess('_bt_wasm_toggle_changed');
+var _bt_wasm_list_selected = Module['_bt_wasm_list_selected'] = makeInvalidEarlyAccess('_bt_wasm_list_selected');
+var _bt_wasm_keypress = Module['_bt_wasm_keypress'] = makeInvalidEarlyAccess('_bt_wasm_keypress');
+var _bt_wasm_keypress_any = Module['_bt_wasm_keypress_any'] = makeInvalidEarlyAccess('_bt_wasm_keypress_any');
+var _bt_wasm_input_event = Module['_bt_wasm_input_event'] = makeInvalidEarlyAccess('_bt_wasm_input_event');
 var _main = Module['_main'] = makeInvalidEarlyAccess('_main');
+var _fflush = makeInvalidEarlyAccess('_fflush');
 var _htons = makeInvalidEarlyAccess('_htons');
 var _ntohs = makeInvalidEarlyAccess('_ntohs');
-var _fflush = makeInvalidEarlyAccess('_fflush');
 var _emscripten_stack_get_end = makeInvalidEarlyAccess('_emscripten_stack_get_end');
 var _emscripten_stack_get_base = makeInvalidEarlyAccess('_emscripten_stack_get_base');
 var _strerror = makeInvalidEarlyAccess('_strerror');
@@ -7179,10 +6903,16 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['free'] != 'undefined', 'missing Wasm export: free');
   assert(typeof wasmExports['malloc'] != 'undefined', 'missing Wasm export: malloc');
   assert(typeof wasmExports['bt_wasm_activate'] != 'undefined', 'missing Wasm export: bt_wasm_activate');
+  assert(typeof wasmExports['bt_wasm_scale_changed'] != 'undefined', 'missing Wasm export: bt_wasm_scale_changed');
+  assert(typeof wasmExports['bt_wasm_toggle_changed'] != 'undefined', 'missing Wasm export: bt_wasm_toggle_changed');
+  assert(typeof wasmExports['bt_wasm_list_selected'] != 'undefined', 'missing Wasm export: bt_wasm_list_selected');
+  assert(typeof wasmExports['bt_wasm_keypress'] != 'undefined', 'missing Wasm export: bt_wasm_keypress');
+  assert(typeof wasmExports['bt_wasm_keypress_any'] != 'undefined', 'missing Wasm export: bt_wasm_keypress_any');
+  assert(typeof wasmExports['bt_wasm_input_event'] != 'undefined', 'missing Wasm export: bt_wasm_input_event');
   assert(typeof wasmExports['__main_argc_argv'] != 'undefined', 'missing Wasm export: __main_argc_argv');
+  assert(typeof wasmExports['fflush'] != 'undefined', 'missing Wasm export: fflush');
   assert(typeof wasmExports['htons'] != 'undefined', 'missing Wasm export: htons');
   assert(typeof wasmExports['ntohs'] != 'undefined', 'missing Wasm export: ntohs');
-  assert(typeof wasmExports['fflush'] != 'undefined', 'missing Wasm export: fflush');
   assert(typeof wasmExports['emscripten_stack_get_end'] != 'undefined', 'missing Wasm export: emscripten_stack_get_end');
   assert(typeof wasmExports['emscripten_stack_get_base'] != 'undefined', 'missing Wasm export: emscripten_stack_get_base');
   assert(typeof wasmExports['strerror'] != 'undefined', 'missing Wasm export: strerror');
@@ -7221,13 +6951,19 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['asyncify_stop_rewind'] != 'undefined', 'missing Wasm export: asyncify_stop_rewind');
   assert(typeof wasmExports['memory'] != 'undefined', 'missing Wasm export: memory');
   assert(typeof wasmExports['__indirect_function_table'] != 'undefined', 'missing Wasm export: __indirect_function_table');
-  _free = createExportWrapper('free', 1);
-  _malloc = createExportWrapper('malloc', 1);
+  _free = Module['_free'] = createExportWrapper('free', 1);
+  _malloc = Module['_malloc'] = createExportWrapper('malloc', 1);
   _bt_wasm_activate = Module['_bt_wasm_activate'] = createExportWrapper('bt_wasm_activate', 1);
+  _bt_wasm_scale_changed = Module['_bt_wasm_scale_changed'] = createExportWrapper('bt_wasm_scale_changed', 2);
+  _bt_wasm_toggle_changed = Module['_bt_wasm_toggle_changed'] = createExportWrapper('bt_wasm_toggle_changed', 2);
+  _bt_wasm_list_selected = Module['_bt_wasm_list_selected'] = createExportWrapper('bt_wasm_list_selected', 3);
+  _bt_wasm_keypress = Module['_bt_wasm_keypress'] = createExportWrapper('bt_wasm_keypress', 2);
+  _bt_wasm_keypress_any = Module['_bt_wasm_keypress_any'] = createExportWrapper('bt_wasm_keypress_any', 1);
+  _bt_wasm_input_event = Module['_bt_wasm_input_event'] = createExportWrapper('bt_wasm_input_event', 4);
   _main = Module['_main'] = createExportWrapper('__main_argc_argv', 2);
+  _fflush = createExportWrapper('fflush', 1);
   _htons = createExportWrapper('htons', 1);
   _ntohs = createExportWrapper('ntohs', 1);
-  _fflush = createExportWrapper('fflush', 1);
   _emscripten_stack_get_end = wasmExports['emscripten_stack_get_end'];
   _emscripten_stack_get_base = wasmExports['emscripten_stack_get_base'];
   _strerror = createExportWrapper('strerror', 1);
@@ -7276,8 +7012,6 @@ var wasmImports = {
   /** @export */
   __syscall_accept4: ___syscall_accept4,
   /** @export */
-  __syscall_connect: ___syscall_connect,
-  /** @export */
   __syscall_fcntl64: ___syscall_fcntl64,
   /** @export */
   __syscall_fstat64: ___syscall_fstat64,
@@ -7296,23 +7030,25 @@ var wasmImports = {
   /** @export */
   __syscall_pipe2: ___syscall_pipe2,
   /** @export */
-  __syscall_poll: ___syscall_poll,
-  /** @export */
-  __syscall_recvfrom: ___syscall_recvfrom,
-  /** @export */
-  __syscall_sendto: ___syscall_sendto,
-  /** @export */
-  __syscall_socket: ___syscall_socket,
-  /** @export */
   __syscall_stat64: ___syscall_stat64,
   /** @export */
   _abort_js: __abort_js,
   /** @export */
-  _emscripten_lookup_name: __emscripten_lookup_name,
-  /** @export */
   _emscripten_runtime_keepalive_clear: __emscripten_runtime_keepalive_clear,
   /** @export */
   _tzset_js: __tzset_js,
+  /** @export */
+  bt_ws_avail,
+  /** @export */
+  bt_ws_broken,
+  /** @export */
+  bt_ws_connect,
+  /** @export */
+  bt_ws_packet_ready,
+  /** @export */
+  bt_ws_recv,
+  /** @export */
+  bt_ws_send,
   /** @export */
   clock_time_get: _clock_time_get,
   /** @export */

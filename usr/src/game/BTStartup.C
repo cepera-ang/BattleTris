@@ -157,25 +157,19 @@ BTStartup::BTStartup( BTWidget *parent )
 	    "btgimp.ppm" : "btgimp2.ppm");
 	gimp_image_->ref();
   
-  cout << " Done.\nBattleTris: Loading BattleTris ..." << flush;
-
+  printf("BOOTSTRAP: Creating BTBazaar...\n"); fflush(stdout);
   bazaar_ = new BTBazaar(parent_, pimp_, comm_manager_, bazaar);
-  cout << '.' << flush;
-
+  printf("BOOTSTRAP: Creating BTGame...\n"); fflush(stdout);
   game_ = new BTGame(parent_, sound_manager_, comm_manager_, pimp_, bazaar_, gimp_image_);
-  cout << '.' << flush;
-  
+  printf("BOOTSTRAP: Creating BTAbout...\n"); fflush(stdout);
   about_box_ = new BTAbout(parent_, icon);
-  cout << '.' << flush;
-
+  printf("BOOTSTRAP: Creating BTChallenge...\n"); fflush(stdout);
   challenge_screen_ = new BTChallenge(parent_, net_manager_, icon);
-  cout << '.' << flush;
-
+  printf("BOOTSTRAP: Creating BTRoster...\n"); fflush(stdout);
   roster_ = new BTRoster(parent_, net_manager_, icon);
-  cout << '.' << flush;
-
+  printf("BOOTSTRAP: Creating BTBiff...\n"); fflush(stdout);
   biff_ = new BTBiff(parent_, sleep, chal, dev_);
-  cout << '.' << flush;
+  printf("BOOTSTRAP: Core objects initialized.\n"); fflush(stdout);
 
   biff_->sleep_daw_->addInputCallback(handleBiffClick_CB, this);
   biff_click_ = 0;

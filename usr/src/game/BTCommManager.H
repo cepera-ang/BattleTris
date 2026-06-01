@@ -39,6 +39,8 @@ private:
   BTPimp *pimp_;	// The street-walkin\' pimp
   BTCommManager *cain_;	// The evil brother CommManager
   int able_;
+  int waiting_start_;
+  char opponent_name_[64];
   BTStartup *startup_;
   BTComputer *computer_;
 

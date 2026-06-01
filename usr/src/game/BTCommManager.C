@@ -28,9 +28,10 @@ const char *BTCOMM_COMPUTER_NAME = "Greased Ernie";
 BTCommManager::BTCommManager(BTWidget *widget, BTPimp *pimp, 
 			     BTStartup *startup)
 : sock_(0), widget_(widget), board_buf_(0), pimp_(pimp), startup_(startup),
-  cain_(0), able_ (0), computer_(0)
+  cain_(0), able_ (0), waiting_start_(0), computer_(0)
 {
   gamecb_ = new XtSocketCB(((BTXDisplay *)DISPLAY)->app_, gameCallback, this);
+  opponent_name_[0] = '\0';
 }
 
 
@@ -293,6 +294,17 @@ void BTCommManager::gameCB(void)
     break;
   }
 
+  case BT_START: {
+#ifdef __EMSCRIPTEN__
+    if (waiting_start_) {
+      pbuf_.sendpacket(BT_START);
+      waiting_start_ = 0;
+      send(BT_START, opponent_name_[0] ? (void *)opponent_name_ : (void *)BTCOMM_COMPUTER_NAME);
+    }
+#endif
+    break;
+  }
+
   case BT_ERR: {
     BTDebug("BT_ERR received");
     BTMessageDlog errMsg(widget_, "Opponent aborted game or crashed.");
@@ -489,6 +501,22 @@ BTCommManager::~BTCommManager()
 
 int BTCommManager::startGame(StreamSocket *sock, char *opponentName)
 {
+#ifdef __EMSCRIPTEN__
+  pbuf_.socket(sock);
+  sock_ = sock;
+  cain_ = 0;
+  waiting_start_ = 1;
+  if (opponentName) {
+    strncpy(opponent_name_, opponentName, sizeof(opponent_name_) - 1);
+    opponent_name_[sizeof(opponent_name_) - 1] = '\0';
+  } else {
+    strcpy(opponent_name_, BTCOMM_COMPUTER_NAME);
+  }
+  sock_->installCB(gamecb_, SOCKET_CB_READ);
+  pbuf_.sendpacket(BT_START);
+  return 1;
+#endif
+
   timeval timeout;
   timeout.tv_sec = BTCOMM_START_TIMEOUT;
   timeout.tv_usec = 0;

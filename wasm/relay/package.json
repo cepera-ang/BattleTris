@@ -1,0 +1,12 @@
+{
+  "name": "battletris-relay",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "scripts": {
+    "start": "node relay.mjs"
+  }
+}
