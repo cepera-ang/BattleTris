@@ -85,14 +85,17 @@ static struct {
 	const char *name;
 } levels[] = {
 	{ 4000, "Comatose" },
-	{ 3000, "Languid" },
+	{ 3000, "Somnambulant" },
 	{ 2000, "Lethargic" },
-	{ 1500, "Alert" },
+	{ 1500, "Pensive" },
 	{ 1250, "Able" },
 	{ 1000, "Willing" },
-	{ 750, "Lively" },
-	{ 500, "Energetic" },
+	{ 750, "Focused" },
+	{ 550, "Lively" },
+	{ 400, "Energetic" },
+	{ 350, "Pepped-up" },
 	{ 300, "Caffeinated" },
+	{ 225, "Bug-eyed" },
 	{ 100, "Supercharged" },
 	{ 10, "Hell-Bent" },
 	{ 0, "Bionic" }
@@ -213,7 +216,9 @@ void BTComputer::reset(int level)
   upsidedown_ = no_happy_ = bazaar_no_ = 0;
   carter_ = swapper_ = reloaded_ = 0;
   make_move_ = deciding_ = no_nice_day_ = next_launch_ = bazaar_ = 0;
+  left_bazaar_ = op_left_bazaar_ = 0;
   lawyers_ = weapons_ = paused_ = condor_ = weapons_bought_ = 0;
+  old_lines_ = 0;
   piece_no_ = 0;
   next_weapon_ = BT_MONDALE;
   arsenal_ = 0;
@@ -226,8 +231,6 @@ void BTComputer::reset(int level)
 	} else {
 		update_freq_ = 1;
 	}
-
-  comm_manager_->clear();
 }
 
 void BTComputer::_cmptimeout_( void *data, unsigned long * )
@@ -237,9 +240,23 @@ void BTComputer::_cmptimeout_( void *data, unsigned long * )
   t->run();
 }
 
-void BTComputer::_bazwait_( void *data, unsigned long * )
+void BTComputer::checkBazaar()
 {
-  ((BTComputer *)data)->send ( BT_END_BAZ, 0 );
+  // Only resume play once both we and the opponent have left the
+  // bazaar; otherwise Ernie gets to play while you're still shopping.
+  if (left_bazaar_ && op_left_bazaar_) {
+    left_bazaar_ = 0;
+    op_left_bazaar_ = 0;
+    bazaar_ = 0;
+    id_ = DISPLAY->addTimeout(delay_, _cmptimeout_, this);
+  }
+}
+
+void BTComputer::leaveBazaar( unsigned long * )
+{
+  left_bazaar_ = 1;
+  send ( BT_END_BAZ, NULL );
+  checkBazaar();
 }
 
 void BTComputer::receive (BTRingPacket *packet) {
@@ -262,7 +279,19 @@ void BTComputer::receive (BTRingPacket *packet) {
     lines_removed_ = ((BTLine *) packet->data)->inc();
     break;
   }
-    
+
+  case BT_OP_SCORE: {
+    // If Ernie holds a Lawyers' Delite, push his board up by one line
+    // for each line the opponent just cleared.
+    BTScore *op_score = (BTScore *) packet->data;
+    if (weapon_manager_->BTActive[BT_LAWYERS]) {
+      for (int i = 0; i < op_score->lines_ - old_lines_; i++)
+        send(BT_LAWYER, NULL);
+    }
+    old_lines_ = op_score->lines_;
+    break;
+  }
+
   case BT_START_BAZ: {
     removeTimer();
     BTDebug2("Received start baz token!");
@@ -273,8 +302,8 @@ void BTComputer::receive (BTRingPacket *packet) {
     break;
   }
   case BT_END_BAZ: {
-    bazaar_ = 0;
-    id_ = DISPLAY->addTimeout(delay_, _cmptimeout_, this);
+    op_left_bazaar_ = 1;
+    checkBazaar();
     break;
   }
     
@@ -325,12 +354,6 @@ void BTComputer::receive (BTRingPacket *packet) {
     switch (wpn->token()) {
       
     case BT_KEATING: {
-      pass(packet);
-/* How can I erase this?
-      BTWeapon temp(BT_REAGAN);
-      send(BT_WPN_LAUNCH,&temp);
-      return;
-      */
       break;
     }
     case BT_CARTER: {
@@ -650,7 +673,7 @@ void BTComputer::goShopping( long &funds )
       }
     }
   }
-  DISPLAY->addTimeout( BT_BAZAAR_TIMEOUT, _bazwait_, this);
+  DISPLAY->addTimeout( BT_BAZAAR_TIMEOUT, leaveBazaar_CB, this);
 }
 
 void BTComputer::launchWeapon( int weapon_id ) {
@@ -1248,7 +1271,6 @@ int BTComputer::run()
   deciding_ = 0;
   
   if ( comm_manager_ ) {
-    comm_manager_->flushStash();
     comm_manager_->flushWeapons();
   }
   

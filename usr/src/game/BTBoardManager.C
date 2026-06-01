@@ -253,11 +253,13 @@ void BTBoardManager::flipOnVert() {
 void BTBoardManager::fill (int x, int y, BTBox *new_box) { 
   // Fill in the given location with the given box
   if ((x >= 0) && (x < width_) && (y >= 0) && (y < height_)) {
-    map_[x][y] = new_box; 
+    map_[x][y] = new_box;
     new_fill_[fill_count_++] = new_box;
   }
   else
-    assert ( 1 == 0);
+    // This box must have moved off of the board (due, e.g., to a
+    // BT_FALL_OUT).  Just delete the box.
+    delete new_box;
 }
 
 void BTBoardManager::receive (BTRingPacket *packet) {
@@ -269,19 +271,11 @@ void BTBoardManager::receive (BTRingPacket *packet) {
     old_lines_ = 0;
     upside_ = 0;
     break;
-  case BT_OP_SCORE: {
-    BTScore *op_score = (BTScore *) packet->data;
-
-    // If Lawyers\' Delite is active and the number of lines has increased,
-    // push the board up.
-    if (op_score->lines_ > old_lines_ && weapon_manager_->BTActive[BT_LAWYERS]) {
-      for (int i = 0; i < op_score->lines_ - old_lines_; i++)
-        insertLine();
-      redraw();
-    }
-    old_lines_ = op_score->lines_;
+  case BT_LAWYER:
+    // A Lawyers' Delite line-rise, sent explicitly (and piece-aware)
+    // by the owner of the weapon via BTGame::lawyers().  See 1000033.
+    insertLine();
     break;
-  } 
 
   case BT_WPN_ON: {
     actives_++;  // Why do we need this?
@@ -379,7 +373,10 @@ void BTBoardManager::receive (BTRingPacket *packet) {
     case BT_GIMP: {
       for (int i = 0; i < height_; i++)
 	for (int j = 0; j < width_; j++) {
-	  if (map_[j][i]) {
+	  // Do not gimpify non-removeable boxes (e.g. the bottleneck);
+	  // disposing and recreating them corrupts the board and can
+	  // crash on a BT_BOTTLE/BT_GIMP/BT_BLIND combo.
+	  if (map_[j][i] && map_[j][i]->isRemoveable()) {
 	    int value = map_[j][i]->value();
 	    box_manager_->dispose(map_[j][i]);
 	    map_[j][i] = box_manager_->createGimp(j,i,value);

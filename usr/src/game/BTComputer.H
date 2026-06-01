@@ -15,6 +15,7 @@ using namespace std;
 #include "BTRingNode.H"
 #include "BTCBoard.H"
 #include "BTStack.H"
+#include "BTTimeOut.H"
 
 #if STDC_HEADERS
 # include <stdlib.h>
@@ -136,6 +137,7 @@ private:
   game_,        // do we have a game
   paused_,      // is the game paused
   bazaar_,      // are we in the bazaar
+  left_bazaar_, op_left_bazaar_,  // bazaar-exit synchronization
   condor_,      // is the condor going
   weapons_bought_,  // # of weapons we\'ve bought
   lowline_,     // have we crossed the "safe" line?
@@ -144,7 +146,8 @@ private:
   make_move_,   // keeps track of how many moves Ernie should make
   update_freq_, // number of pieces ernie uses before a condor update (used b/c super ernie)
   super_,       // are we super Ernie
-  rescan_;
+  rescan_,
+  old_lines_;   // opponent's line count, for Lawyers' Delite
 
   char name_[BT_ERNIE_NAME_LEN];
 
@@ -164,7 +167,9 @@ private:
   int purchaseApproved();
   BTCOrders *findOrder( unsigned long, int = BT_NO_WPN, int remove = 0 );
   void handleEvents();
-  
+  void checkBazaar();
+  BT_TIMEOUT_CALLBACK(BTComputer, leaveBazaar);
+
 public:
   BTComputer ( BTCommManager *, BTGame *, BTPimp * );
   void receive(BTRingPacket *packet);
@@ -172,7 +177,6 @@ public:
   void reset( int = 0 );
   ~BTComputer();
   static void _cmptimeout_( void *, unsigned long * );
-  static void _bazwait_( void *, unsigned long * );
   int deciding() { return deciding_; }
   void removeTimer();
   const char *name() { return name_; }

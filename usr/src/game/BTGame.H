@@ -73,6 +73,7 @@ private:
 
 	int sliding_;
 	int drop_;
+	int old_lines_;		// opponent's line count, for Lawyers' Delite
 	BTGameStats *stats_;
 	BTPimp *pimp_;
 	BTFormWidget *form_;
@@ -141,7 +142,9 @@ public:
 	void unpause();
 	void keyPressed (char c);
 	void drop();
-	void place();
+	void startSlide();
+	void lawyers(int nlines);
+	void place(int force = 0);
 	void beginDrop();
 	void moveLeft();
 	void moveRight();

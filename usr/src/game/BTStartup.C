@@ -404,6 +404,7 @@ void BTStartup::handleYes() {
 
     game_->endGame();
     hideGame();
+    game_->reset();
 
     // And set the values correctly...
     parent_->size(-1, -1, BT_GAME_WIDTH, BT_GAME_HEIGHT);
@@ -533,13 +534,10 @@ void BTStartup::gameOverTimeOut (unsigned long *) {
     return;
   }
 
-  // Make sure that the game has cleaned up
-  if (game_->started_ == 1)
-    game_->endGame();
-
   hideGame();
+  game_->reset();
 
-  net_manager_->gameOver();  
+  net_manager_->gameOver();
 
   if (won_ < 0) {
     won_ = 0;
