@@ -50,7 +50,7 @@ void BTCommManager::receive(BTRingPacket *packet)
 
 #ifndef NDEBUG
   if(sock_ == 0) {
-    Pass(packet);
+    pass(packet);
     return;
   }
 #endif

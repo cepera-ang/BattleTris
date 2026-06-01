@@ -162,6 +162,10 @@ short StreamSocket::connect(UnixAddress& peer, UnixAddress& addr)
 
 short StreamSocket::listen(int backlog)
 {
+#ifdef __EMSCRIPTEN__
+  return ERRSTREAMNOERR;
+#endif
+
   if(un_addr_) {
     assert(un_peer_ == 0);
 
@@ -185,6 +189,10 @@ short StreamSocket::listen(int backlog)
 
 short StreamSocket::listen(int backlog, InetAddress& addr)
 {
+#ifdef __EMSCRIPTEN__
+  return ERRSTREAMNOERR;
+#endif
+
   assert(in_peer_ == 0);
 
   if(::bind(sock(), in_addr_.addr(), in_addr_.size()) < 0)
@@ -206,6 +214,10 @@ short StreamSocket::listen(int backlog, InetAddress& addr)
 
 short StreamSocket::listen(int backlog, UnixAddress& addr)
 {
+#ifdef __EMSCRIPTEN__
+  return ERRSTREAMNOERR;
+#endif
+
   assert(un_peer_ == 0);
 
   if(::bind(sock(), un_addr_.addr(), un_addr_.size()) < 0)

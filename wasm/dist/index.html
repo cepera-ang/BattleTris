@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BattleTris full wasm</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <canvas id="screen" width="720" height="760"></canvas>
+    <aside>
+      <h1>BattleTris</h1>
+      <p>Full original binary path, wasm X/Motif shim.</p>
+    </aside>
+  </main>
+  <script>
+    var Module = {
+      canvas: document.getElementById("screen"),
+      preRun: [],
+      postRun: [],
+      drawCount: 0,
+      btFillRect(x, y, w, h) {
+        const ctx = Module.canvas.getContext("2d");
+        ctx.fillStyle = "#e6d21d";
+        ctx.fillRect(x, y, w, h);
+        Module.drawCount++;
+      },
+      btFlush() {}
+    };
+  </script>
+  <script src="battletris-full.js"></script>
+</body>
+</html>

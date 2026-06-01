@@ -249,7 +249,7 @@ BTBox *BTBoxManager::createGimp (int x, int y, int value) {
 // Given an ID for a box, creates it (used to pass boards around)
 BTBox *BTBoxManager::createByID (int x, int y, int ID) {
 
-  assert (id >= 0);
+  assert (ID >= 0);
 
   if (ID == BT_STRUCT)
     return structureCreate(x,y);
