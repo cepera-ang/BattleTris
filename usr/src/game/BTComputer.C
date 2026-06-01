@@ -85,14 +85,17 @@ static struct {
 	const char *name;
 } levels[] = {
 	{ 4000, "Comatose" },
-	{ 3000, "Languid" },
+	{ 3000, "Somnambulant" },
 	{ 2000, "Lethargic" },
-	{ 1500, "Alert" },
+	{ 1500, "Pensive" },
 	{ 1250, "Able" },
 	{ 1000, "Willing" },
-	{ 750, "Lively" },
-	{ 500, "Energetic" },
+	{ 750, "Focused" },
+	{ 550, "Lively" },
+	{ 400, "Energetic" },
+	{ 350, "Pepped-up" },
 	{ 300, "Caffeinated" },
+	{ 225, "Bug-eyed" },
 	{ 100, "Supercharged" },
 	{ 10, "Hell-Bent" },
 	{ 0, "Bionic" }
