@@ -1,14 +1,26 @@
 
 ![BattleTris](usr/src/art/btstartup2.png)
 
+# BattleTris
+
+BattleTris is a two-player networked game based on Tetris.   Players
+collect  money  to  purchase  weapons,  which  in  turn  make the other
+player's game more difficult.  Examples of weapons include flipping the
+opponent's  screen  upside  down,  swapping  boards with your opponent,
+"spying" on your opponent, giving your opponent disjointed pieces, etc.
+Each  player's  record  is  maintained  in  a database, and players are
+ranked based on their performance.  
+If a player wants to hone his or her
+skills, he or she may also play the computer (though not for ranking).
+
 ## History
 
 BattleTris was written at Brown University as a CS32 final project in
 spring 1994 by Bryan Cantrill, Charlie Hoecker and Mike Shapiro.
-It has been revived several times between 1994 and 2001, and then
+It was revived several times between 1994 and 2001, and then
 revived again in 2026.  (A fuller history -- including the inspiration
 for BattleTris -- can be found in
-[A portentous reunion](https://bcantrill.dtrace.org/2026/05/25/a-portentous-reunion/).)
+[here](https://bcantrill.dtrace.org/2026/05/25/a-portentous-reunion/).)
 
 ## Requirements
 
@@ -16,16 +28,9 @@ BattleTris is a time
 capsule of Unix on the desktop ca. 1994: it was originally written for
 Solaris on SPARC, using [X11](https://en.wikipedia.org/wiki/X_Window_System) and
 [Motif](https://en.wikipedia.org/wiki/Motif_(software)).
- 
 This version works on both 
-While originally written for Solaris on SPARC, this version is known to
-work on both MacOS (via [XQuartz](https://www.xquartz.org/) and OpenMotif)
+MacOS (via [XQuartz](https://www.xquartz.org/) and OpenMotif)
 and on Linux.  
-
-Note that BattleTris dates from a time that the highest resolution
-monitors were 1600 by 900; those on modern (higher resolution) displays
-may find that the resolution of output needs to be manually lowered to
-make the game playable.
 
 Note that BattleTris dates from a time that the highest resolution
 monitors were 1600 by 900; those on modern (higher resolution) displays
@@ -42,20 +47,6 @@ To play against the computer, you do not need to be networked at all;
 run `BattleTris -X`.
 
 ## Gameplay
-
-### Description
-
-BattleTris is a two-player networked game based on Tetris.   Players
-collect  money  to  purchase  weapons,  which  in  turn  make the other
-player's game more difficult.  Examples of weapons include flipping the
-opponent's  screen  upside  down,  swapping  boards with your opponent,
-"spying" on your opponent, giving your opponent disjointed pieces, etc.
-Each  player's  record  is  maintained  in  a database, and players are
-ranked based on their performance.  This database is maintained by sep‐
-arate BattleTris Server software.  If a player wants to hone his or her
-skills, he or she may also play the computer (though not for ranking).
-
-### Rules
 
 After connection is established, each player begins by  playing  tetris
 normally.   The  difference is that in addition to the standard pieces,
@@ -84,7 +75,7 @@ durations range from 3 to 30 lines.
 
 The first player to die loses.
 
-## Directions
+## Future directions
 
 ### Graphics
 
