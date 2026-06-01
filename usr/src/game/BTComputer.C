@@ -216,6 +216,7 @@ void BTComputer::reset(int level)
   upsidedown_ = no_happy_ = bazaar_no_ = 0;
   carter_ = swapper_ = reloaded_ = 0;
   make_move_ = deciding_ = no_nice_day_ = next_launch_ = bazaar_ = 0;
+  left_bazaar_ = op_left_bazaar_ = 0;
   lawyers_ = weapons_ = paused_ = condor_ = weapons_bought_ = 0;
   piece_no_ = 0;
   next_weapon_ = BT_MONDALE;
@@ -240,9 +241,23 @@ void BTComputer::_cmptimeout_( void *data, unsigned long * )
   t->run();
 }
 
-void BTComputer::_bazwait_( void *data, unsigned long * )
+void BTComputer::checkBazaar()
 {
-  ((BTComputer *)data)->send ( BT_END_BAZ, 0 );
+  // Only resume play once both we and the opponent have left the
+  // bazaar; otherwise Ernie gets to play while you're still shopping.
+  if (left_bazaar_ && op_left_bazaar_) {
+    left_bazaar_ = 0;
+    op_left_bazaar_ = 0;
+    bazaar_ = 0;
+    id_ = DISPLAY->addTimeout(delay_, _cmptimeout_, this);
+  }
+}
+
+void BTComputer::leaveBazaar( unsigned long * )
+{
+  left_bazaar_ = 1;
+  send ( BT_END_BAZ, NULL );
+  checkBazaar();
 }
 
 void BTComputer::receive (BTRingPacket *packet) {
@@ -276,8 +291,8 @@ void BTComputer::receive (BTRingPacket *packet) {
     break;
   }
   case BT_END_BAZ: {
-    bazaar_ = 0;
-    id_ = DISPLAY->addTimeout(delay_, _cmptimeout_, this);
+    op_left_bazaar_ = 1;
+    checkBazaar();
     break;
   }
     
@@ -647,7 +662,7 @@ void BTComputer::goShopping( long &funds )
       }
     }
   }
-  DISPLAY->addTimeout( BT_BAZAAR_TIMEOUT, _bazwait_, this);
+  DISPLAY->addTimeout( BT_BAZAAR_TIMEOUT, leaveBazaar_CB, this);
 }
 
 void BTComputer::launchWeapon( int weapon_id ) {
